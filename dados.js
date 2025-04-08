@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", function () {
       querySnapshot.forEach((doc) => {
         const dados = doc.data();
         const tr = document.createElement("tr");
-  
+
         tr.innerHTML = `
           <td>${dados.usuario || ""}</td>
           <td>${dados.NomeAluno || ""}</td>
