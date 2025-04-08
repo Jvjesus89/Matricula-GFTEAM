@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 //consultar alunos
 document.addEventListener("DOMContentLoaded", function () {
     const tabela = document.querySelector("#tabela-alunos tbody");
