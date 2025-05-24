@@ -82,3 +82,9 @@ document.addEventListener("DOMContentLoaded", async function () {
     alert("Erro ao carregar alunos.");
   }
 });
+//BUSCA ALUNO POR NOME
+$('#inputBusca').on('keyup', function() {
+  $('#tabela-alunos').DataTable().search(this.value).draw();
+});
+
+
