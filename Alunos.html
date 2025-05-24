@@ -8,14 +8,10 @@
   <link rel="stylesheet" href="css/stylepadrao.css">
   <link rel="stylesheet" href="css/bootstrap.css">
 
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-
-
-  <script src="conectionBase.js"></script>
-  <script src="dados.js"></script>
-  <script src="layout.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js"></script>
+  <script type="module" src="conectionBase.js"></script>
+  <script type="module" src="dados.js"></script>
+  <script type="module" src="layout.js"></script>
 
 </head>
 
@@ -42,9 +38,6 @@
               <th>Ações</th>
             </tr>
           </thead>
-          <tbody>
-            <!-- Os dados do Firebase serão inseridos aqui -->
-          </tbody>
         </table>
       </div>
 
