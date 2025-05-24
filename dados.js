@@ -17,7 +17,7 @@ async function verificarLogin() {
 
   try {
     // Realiza a requisição para a função Netlify "aluno"
-    const response = await fetch('/.netlify/functions/aluno', {
+    const response = await fetch('/.netlify/functions/alunos', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
