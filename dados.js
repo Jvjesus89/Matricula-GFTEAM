@@ -1,35 +1,46 @@
 // dados.js
 
-window.verificarLogin = async function() {
-  const usuario = document.getElementById('usuario').value.trim();
-  const senha = document.getElementById('senha').value.trim();
+// Função para verificar o login acionada pelo botão na página
+async function verificarLogin() {
+  // Recupera os valores dos inputs
+  const usuario = document.getElementById('usuario').value;
+  const senha = document.getElementById('senha').value;
 
+  // Validação simples dos campos
   if (!usuario || !senha) {
-    alert('Por favor, preencha usuário e senha.');
+    alert("Usuário e senha são obrigatórios!");
     return;
   }
 
+  // Monta o payload da requisição
+  const payload = { usuario, senha };
+
   try {
+    // Realiza a requisição para a função Netlify "aluno"
     const response = await fetch('/.netlify/functions/aluno', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ usuario, senha }),
+      body: JSON.stringify(payload)
     });
 
-    const result = await response.json();
+    // Converte a resposta para JSON
+    const data = await response.json();
 
     if (response.ok) {
-      alert(result.message);
-      // Você pode salvar dados no localStorage, sessionStorage, ou redirecionar
-      // Exemplo salvar usuário:
-      localStorage.setItem('alunoLogado', JSON.stringify(result.aluno));
-      // Redirecionar para dashboard:
-      window.location.href = 'dashboard.html';
+      // Em caso de sucesso, exibe a mensagem e os dados retornados
+      alert(data.message);
+      console.log("Dados do aluno:", data.aluno);
+      // A partir daqui, você pode redirecionar o usuário ou armazenar dados para manter a sessão.
+      // Exemplo: window.location.href = "dashboard.html";
     } else {
-      alert(result.error || 'Erro ao fazer login.');
+      // Em caso de erro, exibe a mensagem de erro
+      alert(data.error || "Erro no login.");
     }
   } catch (error) {
-    console.error('Erro na conexão:', error);
-    alert('Erro na conexão. Tente novamente.');
+    console.error("Erro ao conectar com o servidor:", error);
+    alert("Erro inesperado. Por favor, tente novamente mais tarde.");
   }
-};
+}
+
+// Disponibiliza a função no escopo global para que ela possa ser chamada pelo atributo "onclick" no HTML
+window.verificarLogin = verificarLogin;
