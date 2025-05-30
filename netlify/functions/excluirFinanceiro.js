@@ -13,19 +13,19 @@ exports.handler = async function(event, context) {
     };
   }
 
-  const idusuario = event.queryStringParameters.idusuario;
+  const id = event.queryStringParameters?.id;
 
-  if (!idusuario) {
+  if (!id) {
     return {
       statusCode: 400,
-      body: JSON.stringify({ error: 'ID do usuário é obrigatório' }),
+      body: JSON.stringify({ error: 'Parâmetro id é obrigatório' }),
     };
   }
 
-  const { data, error } = await supabase
-    .from('usuarios')
+  const { error } = await supabase
+    .from('financeiro')
     .delete()
-    .eq('idusuario', idusuario);
+    .eq('idfinanceiro', id);
 
   if (error) {
     return {
@@ -36,6 +36,6 @@ exports.handler = async function(event, context) {
 
   return {
     statusCode: 200,
-    body: JSON.stringify({ message: 'Usuário excluído com sucesso!' }),
+    body: JSON.stringify({ message: 'Registro financeiro excluído com sucesso' }),
   };
-};
+}; 

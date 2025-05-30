@@ -7,17 +7,125 @@
     <meta media="viewport" content="width=device-width">
     <link rel="stylesheet" href="css/stylepadrao.css">
     <link rel="stylesheet" href="css/bootstrap.css">
-    <script src="login.js"></script>
-    <script src="layout.js"></script>
-    <script>src="conectionBase.js"</script>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
 </head>
 
 <body>
     <div id="header-placeholder"></div>
 
-  <main>
-  </main>
-  
-  <div id="footer-placeholder"></div>
+    <main>
+        <!-- Guias de navegação -->
+        <ul class="nav nav-tabs nav-justified sub-menu" role="tablist">
+          <li role="presentation" class="active">
+                <a href="#cadastro" aria-controls="cadastro" role="tab" data-toggle="tab">Cadastro Financeiro</a>
+            </li>
+            <li role="presentation">
+                <a href="#graficos" aria-controls="graficos" role="tab" data-toggle="tab">Gráficos</a>
+            </li>
+        </ul>
 
-</body>  
+        <!-- Conteúdo das guias -->
+        <div class="tab-content">
+            <!-- Guia de Cadastro Financeiro -->
+            <div role="tabpanel" class="tab-pane active" id="cadastro">
+                <div class="container-ConsultaAluno">
+                    <div class="topo-tabela">
+                        <div class="botao">
+                            <button id="btnCadastrarFinanceiro" class="btn btn-primary">Cadastrar Pagamento</button>
+                        </div>
+                        <!-- O campo de busca do DataTables será inserido aqui automaticamente -->
+                    </div>
+
+                    <table id="tabela-financeiro" class="display">
+                        <thead>
+                            <tr>
+                                <th>Nome do Aluno</th>
+                                <th>Valor</th>
+                                <th>Data de Vencimento</th>
+                                <th>Data de Pagamento</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Dados serão inseridos aqui via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="myModal" class="modal">
+                    <div class="modal-content">
+                        <span class="close">&times;</span>
+                        <form class="container-Cadastro" id="form-financeiro">
+                            <div class="form-grupo">
+                                <label for="Aluno">Selecione o Aluno</label>
+                                <select name="Aluno" id="selectAluno" required>
+                                    <option value="">Selecione um aluno...</option>
+                                </select>
+
+                                <label for="Valor">Valor</label>
+                                <input type="number" name="Valor" step="0.01" required>
+
+                                <label for="DataVencimento">Data de Vencimento</label>
+                                <input type="date" name="DataVencimento" required>
+
+                                <label for="DataPagamento">Data de Pagamento</label>
+                                <input type="date" name="DataPagamento">
+
+                                <div style="display: flex; justify-content: center;">
+                                    <input class="botao" type="submit" id="submit-button" value="Cadastrar">
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Guia de Gráficos -->
+            <div role="tabpanel" class="tab-pane" id="graficos">
+                <div class="container-graficos">
+                    <h2>Gráficos Financeiros</h2>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div id="grafico-mensal" style="height: 300px;"></div>
+                        </div>
+                        <div class="col-md-6">
+                            <div id="grafico-status" style="height: 300px;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="footer-placeholder"></div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/js/bootstrap.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="auth.js"></script>
+    <script src="layout.js"></script>
+    <script src="financeiro.js"></script>
+    <script src="graficos.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            // Remove todas as classes active primeiro
+            $('.nav-tabs li').removeClass('active');
+            $('.tab-pane').removeClass('active');
+            
+            // Ativa a primeira aba (Cadastro Financeiro)
+            $('.nav-tabs li:first-child').addClass('active');
+            $('#cadastro').addClass('active');
+            
+            // Configura o evento de clique nas abas
+            $('.nav-tabs a').on('click', function(e) {
+                e.preventDefault();
+                $(this).tab('show');
+            });
+        });
+    </script>
+</body>
+
+</html>  

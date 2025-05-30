@@ -9,23 +9,23 @@ exports.handler = async function(event, context) {
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
-      body: JSON.stringify({ error: 'Method Not Allowed' }),
+      body: JSON.stringify({ error: 'Método não permitido' }),
     };
   }
 
-  let body;
+  let usuario;
   try {
-    body = JSON.parse(event.body);
+    usuario = JSON.parse(event.body);
   } catch {
     return {
       statusCode: 400,
-      body: JSON.stringify({ error: 'Request body inválido.' }),
+      body: JSON.stringify({ error: 'JSON inválido' }),
     };
   }
 
-  const { usuario, senha } = body;
+  const { usuario: nomeUsuario, senha } = usuario;
 
-  if (!usuario || !senha) {
+  if (!nomeUsuario || !senha) {
     return {
       statusCode: 400,
       body: JSON.stringify({ error: 'Usuário e senha são obrigatórios.' }),
@@ -34,37 +34,41 @@ exports.handler = async function(event, context) {
 
   try {
     const { data, error } = await supabase
-      .from('alunos')
-      .select('idaluno, nome, usuario')
-      .eq('usuario', usuario)
-      .eq('senha', senha) // Atenção: para produção, criptografe a senha!
-      .limit(1);
+      .from('usuarios')
+      .select('*')
+      .eq('usuario', nomeUsuario)
+      .eq('senha', senha)
+      .single();
 
     if (error) {
       return {
         statusCode: 500,
-        body: JSON.stringify({ error: 'Erro ao consultar o banco.' }),
+        body: JSON.stringify({ error: error.message }),
       };
     }
 
-    if (data.length === 1) {
-      return {
-        statusCode: 200,
-        body: JSON.stringify({
-          message: 'Login efetuado com sucesso!',
-          aluno: data[0],
-        }),
-      };
-    } else {
+    if (!data) {
       return {
         statusCode: 401,
         body: JSON.stringify({ error: 'Usuário ou senha inválidos.' }),
       };
     }
-  } catch {
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        message: 'Login realizado com sucesso!',
+        usuario: data
+      }),
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Content-Type': 'application/json'
+      }
+    };
+  } catch (err) {
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: 'Erro inesperado.' }),
+      body: JSON.stringify({ error: 'Erro no servidor: ' + err.message }),
     };
   }
-};
+}; 

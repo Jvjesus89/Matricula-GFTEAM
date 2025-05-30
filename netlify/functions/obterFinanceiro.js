@@ -5,25 +5,30 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-exports.handler = async (event, context) => {
-  // Permitir apenas método GET
+exports.handler = async function(event, context) {
   if (event.httpMethod !== 'GET') {
     return {
       statusCode: 405,
-      body: JSON.stringify({ error: 'Método não permitido. Use GET.' }),
+      body: JSON.stringify({ error: 'Método não permitido' }),
     };
   }
 
   try {
-    let query = supabase.from('alunos').select('*');
-
-    // Se um ID foi fornecido, busca apenas esse aluno
-    const id = event.queryStringParameters?.id;
-    if (id) {
-      query = query.eq('idaluno', id);
-    }
-
-    const { data, error } = await query;
+    const { data, error } = await supabase
+      .from('financeiro')
+      .select(`
+          idfinanceiro,
+          valor,
+          data_vencimento,
+          data_pagamento,
+          dtcadastro,
+          idusuario,
+          usuarios (
+            nome,
+            usuario
+          )
+        `)
+        .order('data_vencimento', { ascending: true });
 
     if (error) {
       return {
@@ -32,19 +37,25 @@ exports.handler = async (event, context) => {
       };
     }
 
+    // Formata os dados para incluir o nome do usuário diretamente no objeto principal
+    const formattedData = data.map(item => ({
+      ...item,
+      nome: item.usuarios?.nome || 'Usuário não encontrado',
+      usuario: item.usuarios?.usuario || 'N/A'
+    }));
+
     return {
       statusCode: 200,
-      body: JSON.stringify(data),
+      body: JSON.stringify(formattedData),
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Content-Type': 'application/json'
       }
     };
-
   } catch (err) {
     return {
       statusCode: 500,
       body: JSON.stringify({ error: 'Erro no servidor: ' + err.message }),
     };
   }
-};
+}; 

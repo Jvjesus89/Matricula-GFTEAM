@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html>
 <head>
   <title>GF TEAM - Alunos</title>
@@ -6,52 +7,58 @@
   
   <link rel="stylesheet" href="css/stylepadrao.css">
   <link rel="stylesheet" href="css/bootstrap.css">
-  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.css">
 
 </head>
 
-<body>
+<body onload="verificarAutenticacao()">
   <div id="header-placeholder"></div>
 
   <main>
     <div class="container-ConsultaAluno">
-      <label for="inputBusca">Buscar por Nome</label>
-      <input type="text" id="inputBusca" name="consultarAluno" placeholder="Digite o nome do aluno">
+      <div class="topo-tabela">
+        <div class="botao">
+          <button id="btnCadastrarAluno" class="btn btn-primary">Cadastrar Aluno</button>
+        </div>
+      </div>
 
-      <input class="botao" type="button" id="btnAbrirCadastro" value="Cadastrar novo aluno">
-
-      <table id="tabela-alunos" class="table table-striped table-bordered">
+      <table id="tabelaUsuarios" class="display">
         <thead>
           <tr>
+            <th style="display: none;">ID</th>
             <th>Usuário</th>
-            <th>Nome do Aluno</th>
+            <th>Nome</th>
             <th>Idade</th>
             <th>Telefone</th>
             <th>Ações</th>
           </tr>
         </thead>
+        <tbody>
+
+        </tbody>
       </table>
     </div>
 
+    <!-- Modal de Cadastro -->
     <div id="myModal" class="modal">
       <div class="modal-content">
         <span class="close">&times;</span>
         <form class="container-Cadastro" id="form-aluno">
           <div class="form-grupo">
             <label for="usuario">Usuario</label>
-            <input type="text" name="usuario">
+            <input type="text" name="usuario" autocomplete="username">
 
             <label for="NomeAluno">Nome Aluno</label>
-            <input type="text" name="NomeAluno">
+            <input type="text" name="NomeAluno" autocomplete="name">
 
             <label for="Idade">Idade</label>
-            <input type="number" name="Idade">
+            <input type="number" name="Idade" autocomplete="age">
 
             <label for="Telefone">Telefone</label>
-            <input type="text" name="Telefone" maxlength="15" placeholder="(99) 99999-9999">
+            <input type="text" name="Telefone" maxlength="15" placeholder="(99) 99999-9999" autocomplete="tel">
 
             <label for="Senha">Senha</label>
-            <input type="password" name="Senha">
+            <input type="password" name="Senha" autocomplete="current-password">
 
             <div style="display: flex; justify-content: center;">
               <input class="botao" type="submit" id="submit-button" value="Cadastrar" />
@@ -60,15 +67,16 @@
         </form>
       </div>
     </div>
+
   </main>
 
   <div id="footer-placeholder"></div>
 
   <!-- Scripts -->
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js"></script>
-  <script type="module" src="conectionBase.js"></script>
+  <script src="auth.js"></script>
   <script src="dados.js"></script>
   <script type="module" src="layout.js"></script>
 

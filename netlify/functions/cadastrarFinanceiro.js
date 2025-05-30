@@ -6,26 +6,43 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 exports.handler = async function(event, context) {
-  if (event.httpMethod !== 'DELETE') {
+  if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
       body: JSON.stringify({ error: 'Método não permitido' }),
     };
   }
 
-  const idusuario = event.queryStringParameters.idusuario;
-
-  if (!idusuario) {
+  let financeiro;
+  try {
+    financeiro = JSON.parse(event.body);
+  } catch {
     return {
       statusCode: 400,
-      body: JSON.stringify({ error: 'ID do usuário é obrigatório' }),
+      body: JSON.stringify({ error: 'JSON inválido' }),
+    };
+  }
+
+  const { idusuario, valor, status, dtpagamento } = financeiro;
+
+  if (!idusuario || !valor || !status || !dtpagamento) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ error: 'Todos os campos são obrigatórios.' }),
     };
   }
 
   const { data, error } = await supabase
-    .from('usuarios')
-    .delete()
-    .eq('idusuario', idusuario);
+    .from('financeiro')
+    .insert([
+      {
+        idusuario,
+        valor,
+        status,
+        dtpagamento
+      }
+    ])
+    .select();
 
   if (error) {
     return {
@@ -36,6 +53,9 @@ exports.handler = async function(event, context) {
 
   return {
     statusCode: 200,
-    body: JSON.stringify({ message: 'Usuário excluído com sucesso!' }),
+    body: JSON.stringify({
+      message: 'Pagamento registrado com sucesso!',
+      financeiro: data[0]
+    }),
   };
-};
+}; 
