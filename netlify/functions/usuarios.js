@@ -37,8 +37,7 @@ exports.handler = async function(event, context) {
       .from('usuarios')
       .select('*')
       .eq('usuario', nomeUsuario)
-      .eq('senha', senha)
-      .single();
+      .eq('senha', senha);
 
     if (error) {
       return {
@@ -47,10 +46,19 @@ exports.handler = async function(event, context) {
       };
     }
 
-    if (!data) {
+    // Se não encontrou nenhum usuário
+    if (!data || data.length === 0) {
       return {
         statusCode: 401,
         body: JSON.stringify({ error: 'Usuário ou senha inválidos.' }),
+      };
+    }
+
+    // Se encontrou mais de um usuário (não deveria acontecer)
+    if (data.length > 1) {
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ error: 'Erro no sistema. Por favor, contate o administrador.' }),
       };
     }
 
@@ -58,7 +66,7 @@ exports.handler = async function(event, context) {
       statusCode: 200,
       body: JSON.stringify({
         message: 'Login realizado com sucesso!',
-        usuario: data
+        usuario: data[0]
       }),
       headers: {
         'Access-Control-Allow-Origin': '*',
