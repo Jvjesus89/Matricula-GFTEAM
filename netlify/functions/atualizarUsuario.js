@@ -23,7 +23,7 @@ exports.handler = async function(event, context) {
     };
   }
 
-  const { idusuario, usuario: nomeUsuario, nome, idade, telefone, senha } = usuario;
+  const { idusuario, usuario: nomeUsuario, nome, idade, telefone, senha, perfil } = usuario;
 
   if (!idusuario) {
     return {
@@ -52,7 +52,8 @@ exports.handler = async function(event, context) {
       usuario: nomeUsuario,
       nome,
       idade,
-      telefone
+      telefone,
+      idperfilusuario: perfil
     };
 
     // Só inclui a senha se ela foi fornecida

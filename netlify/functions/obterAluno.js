@@ -15,12 +15,15 @@ exports.handler = async (event, context) => {
   }
 
   try {
-    let query = supabase.from('alunos').select('*');
+    let query = supabase
+      .from('usuarios')
+      .select('*')
+      .eq('idperfilusuario', 2); // Assumindo que 2 é o ID do perfil de aluno
 
-    // Se um ID foi fornecido, busca apenas esse aluno
+    // Se um ID foi fornecido, busca apenas esse usuário
     const id = event.queryStringParameters?.id;
     if (id) {
-      query = query.eq('idaluno', id);
+      query = query.eq('idusuario', id);
     }
 
     const { data, error } = await query;

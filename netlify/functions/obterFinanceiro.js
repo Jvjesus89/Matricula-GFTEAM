@@ -14,21 +14,32 @@ exports.handler = async function(event, context) {
   }
 
   try {
-    const { data, error } = await supabase
+    // Obtém o ID do usuário da query string, se existir
+    const params = new URLSearchParams(event.rawQuery);
+    const idusuario = params.get('idusuario');
+
+    let query = supabase
       .from('financeiro')
       .select(`
-          idfinanceiro,
-          valor,
-          data_vencimento,
-          data_pagamento,
-          dtcadastro,
-          idusuario,
-          usuarios (
-            nome,
-            usuario
-          )
-        `)
-        .order('data_vencimento', { ascending: true });
+        idfinanceiro,
+        valor,
+        data_vencimento,
+        data_pagamento,
+        dtcadastro,
+        idusuario,
+        usuarios (
+          nome,
+          usuario
+        )
+      `)
+      .order('data_vencimento', { ascending: true });
+
+    // Se foi especificado um usuário, filtra por ele
+    if (idusuario) {
+      query = query.eq('idusuario', idusuario);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       return {

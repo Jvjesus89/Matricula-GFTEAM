@@ -7,34 +7,67 @@
     0% { opacity: 0; transform: translateY(50px); }
     100% { opacity: 1; transform: translateY(0); }
   }
-  html, body {
+  html {
     height: 100%;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-  }
-  
-  main {
-    flex: 1;
-  }
- 
- /*Consulta aluno*/ 
-.container-ConsultaAluno{
-  width: 1000px;
-  height: 600px;
-  padding: 0 30px;
-  margin: auto; /* Centraliza horizontalmente */
-  margin-top: 50px;
-  margin-bottom: 50px;
-  border-radius: 5px;
-  border: 2px solid #eeededcc;
-  justify-content: center;
-  align-items: center;
-  font-size: 20px;
-  background-color: rgb(247, 247, 247);
 }
 
+body {
+    min-height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+#header-placeholder {
+    flex-shrink: 0;
+}
+
+main {
+    min-height: calc(100vh - 60px); /* Altura da viewport menos altura do footer */
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 60px; 
+}
+
+#footer-placeholder {
+    flex-shrink: 0;
+}
+
+/*Consulta aluno*/ 
+.container-ConsultaAluno {
+    width: 1000px;
+    min-height: 600px;
+    height: auto;
+    padding: 30px;
+    margin: 50px auto;
+    border-radius: 5px;
+    border: 2px solid #eeededcc;
+    justify-content: center;
+    align-items: center;
+    font-size: 20px;
+    background-color: rgb(247, 247, 247);
+}
+
+.container-ConsultaAluno .dataTables_wrapper {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+/* Ajustes para a tabela */
+table.dataTable {
+    width: 100% !important;
+    margin: 15px 0 !important;
+}
+
+.dataTables_wrapper .dataTables_filter {
+    margin-bottom: 15px;
+}
+
+.dataTables_wrapper .dataTables_info,
+.dataTables_wrapper .dataTables_paginate {
+    margin-top: 15px;
+    margin-bottom: 15px;
+}
 
 /*Cadastro aluno*/
 .modal {
@@ -58,7 +91,6 @@
   max-width: 400px;
   border-radius: 8px;
 }
-
 
 .close {
   color: #aaa;
@@ -107,6 +139,10 @@
 .form-grupo label {
   display: block;
   margin-bottom: 5px;
+  color: #000000;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
 }
 
 .form-grupo .botao {
@@ -288,4 +324,18 @@ table.dataTable thead th {
 
 .dt-center {
   text-align: center;
+}
+
+/* Estilos do Footer */
+.footer-container {
+    background-color: rgb(0, 0, 0);
+    text-align: center;
+    padding: 10px;
+    width: 100%;
+    margin-top: auto;
+}
+
+.footer-text {
+    color: aliceblue;
+    margin: 0;
 }

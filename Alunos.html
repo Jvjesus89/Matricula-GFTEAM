@@ -30,6 +30,7 @@
             <th>Nome</th>
             <th>Idade</th>
             <th>Telefone</th>
+            <th>Perfil</th>
             <th>Ações</th>
           </tr>
         </thead>
@@ -59,6 +60,14 @@
 
             <label for="Senha">Senha</label>
             <input type="password" name="Senha" autocomplete="current-password">
+
+            <label for="perfil">Perfil</label>
+            <select name="perfil" id="perfil" required>
+              <option value="">Selecione um perfil</option>
+              <option value="admin">Administrador</option>
+              <option value="aluno">Aluno</option>
+              <option value="professor">Professor</option>
+            </select>
 
             <div style="display: flex; justify-content: center;">
               <input class="botao" type="submit" id="submit-button" value="Cadastrar" />

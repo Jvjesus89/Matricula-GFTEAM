@@ -35,7 +35,13 @@ exports.handler = async function(event, context) {
   try {
     const { data, error } = await supabase
       .from('usuarios')
-      .select('*')
+      .select(`
+        *,
+        usuario_perfil (
+          perfil,
+          isadministrador
+        )
+      `)
       .eq('usuario', nomeUsuario)
       .eq('senha', senha);
 

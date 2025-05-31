@@ -23,9 +23,9 @@ exports.handler = async function(event, context) {
     };
   }
 
-  const { usuario: nomeUsuario, nome, idade, telefone, senha } = usuario;
+  const { usuario: nomeUsuario, nome, idade, telefone, senha, perfil } = usuario;
 
-  if (!nomeUsuario || !nome || !idade || !telefone || !senha) {
+  if (!nomeUsuario || !nome || !idade || !telefone || !senha || !perfil) {
     return {
       statusCode: 400,
       body: JSON.stringify({ error: 'Todos os campos são obrigatórios.' }),
@@ -63,7 +63,8 @@ exports.handler = async function(event, context) {
           nome,
           idade,
           telefone,
-          senha
+          senha,
+          idperfilusuario: perfil
         }
       ])
       .select();

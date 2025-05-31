@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html>
 
 <head>
@@ -33,7 +34,6 @@
                         <div class="botao">
                             <button id="btnCadastrarFinanceiro" class="btn btn-primary">Cadastrar Pagamento</button>
                         </div>
-                        <!-- O campo de busca do DataTables será inserido aqui automaticamente -->
                     </div>
 
                     <table id="tabela-financeiro" class="display">
@@ -46,9 +46,6 @@
                                 <th>Ações</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <!-- Dados serão inseridos aqui via JavaScript -->
-                        </tbody>
                     </table>
                 </div>
 
@@ -108,24 +105,6 @@
     <script src="layout.js"></script>
     <script src="financeiro.js"></script>
     <script src="graficos.js"></script>
-
-    <script>
-        $(document).ready(function() {
-            // Remove todas as classes active primeiro
-            $('.nav-tabs li').removeClass('active');
-            $('.tab-pane').removeClass('active');
-            
-            // Ativa a primeira aba (Cadastro Financeiro)
-            $('.nav-tabs li:first-child').addClass('active');
-            $('#cadastro').addClass('active');
-            
-            // Configura o evento de clique nas abas
-            $('.nav-tabs a').on('click', function(e) {
-                e.preventDefault();
-                $(this).tab('show');
-            });
-        });
-    </script>
 </body>
 
 </html>  

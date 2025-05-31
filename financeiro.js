@@ -10,7 +10,9 @@ $(document).ready(function() {
     pageLength: 25,
     lengthChange: false,
     dom: 'frtip',
+    responsive: true,
     columns: [
+      { data: 'usuario' },
       { data: 'nome' },
       { 
         data: 'valor',
@@ -49,11 +51,26 @@ $(document).ready(function() {
 
   // Função para carregar os dados financeiros
   window.carregarFinanceiro = function() {
-    fetch('/.netlify/functions/obterFinanceiro')
+    // Verifica se deve filtrar por usuário
+    const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+    const isAdmin = usuario?.usuario_perfil?.isadministrador === true;
+    
+    // Constrói a URL com o filtro se necessário
+    const url = isAdmin 
+      ? '/.netlify/functions/obterFinanceiro'
+      : `/.netlify/functions/obterFinanceiro?idusuario=${usuario.idusuario}`;
+
+    fetch(url)
       .then(response => response.json())
       .then(data => {
         window.tabelaFinanceiro.clear();
         window.tabelaFinanceiro.rows.add(data);
+        
+        // Se não for administrador, oculta a coluna de ações
+        if (!isAdmin) {
+          window.tabelaFinanceiro.column(-1).visible(false);
+        }
+        
         window.tabelaFinanceiro.draw();
       })
       .catch(error => {
@@ -71,7 +88,7 @@ $(document).ready(function() {
         
         data.forEach(aluno => {
           const option = document.createElement('option');
-          option.value = aluno.idaluno;
+          option.value = aluno.idusuario;
           option.textContent = aluno.nome;
           select.appendChild(option);
         });
@@ -123,7 +140,7 @@ $(document).ready(function() {
       e.preventDefault();
 
       const financeiro = {
-        idaluno: formFinanceiro.Aluno.value,
+        idusuario: formFinanceiro.Aluno.value,
         valor: parseFloat(formFinanceiro.Valor.value),
         data_vencimento: formFinanceiro.DataVencimento.value,
         data_pagamento: formFinanceiro.DataPagamento.value || null
@@ -160,7 +177,7 @@ $(document).ready(function() {
       .then(data => {
         const registro = data.find(f => f.idfinanceiro === idfinanceiro);
         if (registro) {
-          document.getElementById('selectAluno').value = registro.idaluno;
+          document.getElementById('selectAluno').value = registro.idusuario;
           document.querySelector('input[name="Valor"]').value = registro.valor;
           document.querySelector('input[name="DataVencimento"]').value = registro.data_vencimento.split('T')[0];
           if (registro.data_pagamento) {

@@ -59,7 +59,8 @@ async function handleFormSubmit(event) {
     nome: form.querySelector('input[name="NomeAluno"]').value,
     idade: parseInt(form.querySelector('input[name="Idade"]').value),
     telefone: form.querySelector('input[name="Telefone"]').value,
-    senha: form.querySelector('input[name="Senha"]').value
+    senha: form.querySelector('input[name="Senha"]').value,
+    perfil: form.querySelector('select[name="perfil"]').value
   };
 
   const idusuario = form.querySelector('input[name="idusuario"]')?.value;
@@ -97,6 +98,16 @@ async function handleFormSubmit(event) {
 // Função para carregar dados dos usuários
 async function carregarUsuarios() {
   try {
+    // Carrega os perfis primeiro
+    const perfilResponse = await fetch('/.netlify/functions/obterPerfis');
+    if (!perfilResponse.ok) throw new Error('Erro ao carregar perfis');
+    const perfis = await perfilResponse.json();
+    
+    // Cria um mapa de ID -> Nome do perfil
+    const perfilMap = {};
+    perfis.forEach(p => perfilMap[p.idperfilusuario] = p.perfil);
+
+    // Carrega os usuários
     const response = await fetch('/.netlify/functions/obterUsuarios');
     if (!response.ok) throw new Error('Erro ao carregar usuários');
     
@@ -116,6 +127,7 @@ async function carregarUsuarios() {
         usuario.nome,
         usuario.idade,
         usuario.telefone,
+        perfilMap[usuario.idperfilusuario] || 'Não definido',
         acoes
       ]);
     });
@@ -163,6 +175,12 @@ async function editarUsuario(idusuario) {
     // Altera o texto do botão para "Atualizar"
     form.querySelector('#submit-button').value = 'Atualizar';
 
+    // Carrega os perfis
+    await carregarPerfis();
+    
+    // Seleciona o perfil do usuário
+    form.querySelector('select[name="perfil"]').value = usuario.idperfilusuario || '';
+
     // Abre o modal
     document.getElementById('myModal').style.display = 'block';
   } catch (error) {
@@ -177,19 +195,24 @@ async function excluirUsuario(idusuario) {
 
   try {
     const response = await fetch(`/.netlify/functions/excluirUsuario?idusuario=${idusuario}`, {
-      method: 'DELETE'
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json'
+      }
     });
+
+    const data = await response.json();
 
     if (response.ok) {
       alert('Usuário excluído com sucesso!');
-      carregarUsuarios();
+      await carregarUsuarios();
     } else {
-      const data = await response.json();
+      console.error('Erro ao excluir usuário:', data);
       alert(data.error || 'Erro ao excluir usuário');
     }
   } catch (error) {
     console.error('Erro ao excluir usuário:', error);
-    alert('Erro ao excluir usuário');
+    alert('Erro ao excluir usuário. Por favor, tente novamente.');
   }
 }
 
@@ -205,6 +228,31 @@ function verificarAutenticacao() {
 function logout() {
   localStorage.removeItem('usuario');
   window.location.href = 'index.html';
+}
+
+// Função para carregar os perfis de usuário
+async function carregarPerfis() {
+  try {
+    const response = await fetch('/.netlify/functions/obterPerfis');
+    if (!response.ok) throw new Error('Erro ao carregar perfis');
+    
+    const perfis = await response.json();
+    const selectPerfil = document.querySelector('select[name="perfil"]');
+    
+    // Limpa as opções existentes
+    selectPerfil.innerHTML = '<option value="">Selecione um perfil</option>';
+    
+    // Adiciona os perfis do banco
+    perfis.forEach(perfil => {
+      const option = document.createElement('option');
+      option.value = perfil.idperfilusuario;
+      option.textContent = perfil.perfil;
+      selectPerfil.appendChild(option);
+    });
+  } catch (error) {
+    console.error('Erro ao carregar perfis:', error);
+    alert('Erro ao carregar lista de perfis');
+  }
 }
 
 // Inicialização do DataTables e eventos
@@ -257,6 +305,7 @@ $(document).ready(function() {
   if (btnCadastrar) {
     btnCadastrar.onclick = function() {
       resetarFormulario();
+      carregarPerfis(); // Carrega os perfis quando abrir o modal
       document.getElementById('myModal').style.display = 'block';
     }
   }
