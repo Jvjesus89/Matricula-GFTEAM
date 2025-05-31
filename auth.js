@@ -11,28 +11,41 @@ function verificarAutenticacao() {
 
 // Verifica se o usuário é administrador
 function isAdmin() {
-    const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
-    return usuario?.usuario_perfil?.isadministrador === true;
+    try {
+        const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+        // Verifica se o usuário tem o perfil e se é administrador
+        return usuario?.usuario_perfil?.isadministrador === true || 
+               // Fallback para verificar pelo ID do perfil (1 = admin)
+               usuario?.idperfilusuario === 1;
+    } catch (error) {
+        console.error('Erro ao verificar permissões:', error);
+        return false;
+    }
 }
 
 // Verifica se o usuário tem acesso a uma funcionalidade específica
 function verificarAcesso() {
     if (!verificarAutenticacao()) return;
 
-    const usuario = JSON.parse(localStorage.getItem('usuario'));
-    const isAdministrador = usuario?.usuario_perfil?.isadministrador === true;
-    const paginaAtual = window.location.pathname.split('/').pop().toLowerCase();
+    try {
+        const usuario = JSON.parse(localStorage.getItem('usuario'));
+        const isAdministrador = isAdmin(); // Usa a função robusta
+        const paginaAtual = window.location.pathname.split('/').pop().toLowerCase();
 
-    // Lista de páginas restritas a administradores
-    const paginasAdmin = ['alunos.html'];
+        // Lista de páginas restritas a administradores
+        const paginasAdmin = ['alunos.html'];
 
-    if (paginasAdmin.includes(paginaAtual) && !isAdministrador) {
-        window.location.href = 'principal.html';
-        return;
+        if (paginasAdmin.includes(paginaAtual) && !isAdministrador) {
+            window.location.href = 'principal.html';
+            return;
+        }
+
+        // Configura a visibilidade dos elementos baseado no perfil
+        configurarInterface(isAdministrador);
+    } catch (error) {
+        console.error('Erro ao verificar acesso:', error);
+        window.location.href = 'index.html';
     }
-
-    // Configura a visibilidade dos elementos baseado no perfil
-    configurarInterface(isAdministrador);
 }
 
 // Configura a interface baseada no perfil do usuário

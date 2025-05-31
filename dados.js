@@ -36,8 +36,22 @@ async function verificarLogin() {
     const data = await response.json();
 
     if (response.ok) {
+      // Verifica se os dados do usuário estão completos
+      if (!data.usuario || !data.usuario.idusuario) {
+        throw new Error('Dados do usuário incompletos');
+      }
+
+      // Garante que o perfil seja salvo corretamente
+      const dadosUsuario = {
+        ...data.usuario,
+        usuario_perfil: data.usuario.usuario_perfil || {
+          isadministrador: data.usuario.idperfilusuario === 1
+        }
+      };
+
       // Armazena os dados do usuário no localStorage
-      localStorage.setItem('usuario', JSON.stringify(data.usuario));
+      localStorage.setItem('usuario', JSON.stringify(dadosUsuario));
+      
       // Redireciona para a página principal
       window.location.href = 'principal.html';
     } else {
