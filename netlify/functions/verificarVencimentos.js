@@ -10,106 +10,121 @@ const WHATSAPP_TOKEN = 'EAATjiH8My38BO7M7rAOZCw4ISLbA6ZA2VZBjEyhOCfHcLir8oYm8Bdb
 const WHATSAPP_PHONE_NUMBER_ID = '624266544111694';
 
 async function enviarMensagemWhatsApp(telefone, mensagem) {
-  try {
-    console.log('Tentando enviar mensagem para:', telefone);
-    
-    const response = await axios({
-      method: 'POST',
-      url: `https://graph.facebook.com/v17.0/${WHATSAPP_PHONE_NUMBER_ID}/messages`,
-      headers: {
-        'Authorization': `Bearer ${WHATSAPP_TOKEN}`,
-        'Content-Type': 'application/json'
-      },
-      data: {
-        messaging_product: 'whatsapp',
-        to: telefone,
-        type: 'text',
-        text: { body: mensagem }
-      }
-    });
-
-    console.log('Mensagem enviada com sucesso:', response.data);
-    return true;
-  } catch (error) {
-    console.error('Erro ao enviar mensagem:', error.response?.data || error.message);
-    return false;
-  }
-}
-
-exports.handler = async function(event, context) {
-  try {
-    // Busca pagamentos que vencem em 5 dias
-    const dataLimite = new Date();
-    dataLimite.setDate(dataLimite.getDate() + 5); // 5 dias à frente
-    
-    const { data: pagamentos, error } = await supabase
-      .from('financeiro')
-      .select(`
-        *,
-        usuarios (
-          nome,
-          telefone
-        )
-      `)
-      .is('data_pagamento', null) // Apenas pagamentos não realizados
-      .lte('data_vencimento', dataLimite.toISOString()) // Vence em até 5 dias
-      .gte('data_vencimento', new Date().toISOString()); // Ainda não venceu
-
-    if (error) {
-      console.error('Erro ao buscar pagamentos:', error);
-      throw error;
-    }
-
-    console.log('Pagamentos encontrados:', pagamentos?.length || 0);
-    const resultados = [];
-
-    // Processa cada pagamento
-    for (const pagamento of pagamentos) {
-      if (!pagamento.usuarios?.telefone) {
-        console.log('Usuário sem telefone:', pagamento.usuarios?.nome);
-        continue;
-      }
-
-      // Formata o telefone (remove caracteres especiais e adiciona código do país)
-      const telefone = '55' + pagamento.usuarios.telefone.replace(/\D/g, '');
-      console.log('Telefone formatado:', telefone);
-      
-      // Formata a data de vencimento
-      const dataVencimento = new Date(pagamento.data_vencimento).toLocaleDateString('pt-BR');
-      
-      // Monta a mensagem
-      const mensagem = `Olá ${pagamento.usuarios.nome}! 👋\n\n` +
-        `Lembramos que você tem um pagamento no valor de R$ ${pagamento.valor.toFixed(2)} ` +
-        `com vencimento em ${dataVencimento}.\n\n` +
-        `Para sua comodidade, você pode realizar o pagamento diretamente na academia.\n\n` +
-        `GFTEAM - Sua parceria no Jiu-Jitsu! 🥋`;
-
-      console.log('Tentando enviar mensagem para:', pagamento.usuarios.nome);
-      // Envia a mensagem
-      const enviado = await enviarMensagemWhatsApp(telefone, mensagem);
-      
-      resultados.push({
-        aluno: pagamento.usuarios.nome,
-        telefone: telefone,
-        valor: pagamento.valor,
-        vencimento: dataVencimento,
-        mensagem_enviada: enviado
+    try {
+      const response = await axios({
+        method: 'POST',
+        url: `https://graph.facebook.com/v17.0/${WHATSAPP_PHONE_NUMBER_ID}/messages`,
+        headers: {
+          'Authorization': `Bearer ${WHATSAPP_TOKEN}`,
+          'Content-Type': 'application/json'
+        },
+        data: {
+          messaging_product: 'whatsapp',
+          to: telefone,
+          type: 'text',
+          text: { body: mensagem }
+        }
       });
+  
+      console.log('✅ Mensagem enviada com sucesso para:', telefone);
+      return { sucesso: true, response: response.data };
+    } catch (error) {
+      const erroDetalhe = error.response?.data || error.message;
+      console.error('❌ Erro ao enviar mensagem para:', telefone, erroDetalhe);
+      return { sucesso: false, erro: erroDetalhe };
     }
-
-    return {
-      statusCode: 200,
-      body: JSON.stringify({
-        message: 'Verificação de vencimentos concluída',
-        resultados: resultados
-      })
-    };
-
-  } catch (error) {
-    console.error('Erro na verificação:', error);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: 'Erro ao processar verificação de vencimentos' })
-    };
   }
-}; 
+  
+  exports.handler = async function(event, context) {
+    try {
+      const hoje = new Date();
+      const dataLimite = new Date();
+      dataLimite.setDate(hoje.getDate() + 5);
+  
+      const { data: pagamentos, error } = await supabase
+        .from('financeiro')
+        .select(`
+          *,
+          usuarios (
+            nome,
+            telefone
+          )
+        `)
+        .is('data_pagamento', null)
+        .lte('data_vencimento', dataLimite.toISOString())
+        .gte('data_vencimento', hoje.toISOString());
+  
+      if (error) {
+        console.error('Erro ao buscar pagamentos:', error);
+        throw error;
+      }
+  
+      if (!pagamentos || pagamentos.length === 0) {
+        console.log('Nenhum pagamento encontrado para notificar.');
+        return {
+          statusCode: 200,
+          body: JSON.stringify({ message: 'Nenhum pagamento encontrado para notificar.' })
+        };
+      }
+  
+      console.log(`🔎 ${pagamentos.length} pagamentos encontrados.`);
+  
+      const resultados = [];
+  
+      for (const pagamento of pagamentos) {
+        const aluno = pagamento.usuarios?.nome || 'Desconhecido';
+        const telefoneUsuario = pagamento.usuarios?.telefone;
+  
+        if (!telefoneUsuario) {
+          console.log(`⚠️ Usuário ${aluno} sem telefone cadastrado.`);
+          resultados.push({
+            aluno,
+            telefone: null,
+            status: 'Telefone não cadastrado'
+          });
+          continue;
+        }
+  
+        const telefone = '55' + telefoneUsuario.replace(/\D/g, '');
+        const dataVencimento = new Date(pagamento.data_vencimento).toLocaleDateString('pt-BR');
+  
+        const mensagem = `Olá ${aluno}! 👋\n\n` +
+          `Lembramos que você tem um pagamento no valor de R$ ${pagamento.valor.toFixed(2)} ` +
+          `com vencimento em ${dataVencimento}.\n\n` +
+          `Para sua comodidade, você pode realizar o pagamento diretamente na academia.\n\n` +
+          `GFTEAM - Sua parceria no Jiu-Jitsu! 🥋`;
+  
+        const envio = await enviarMensagemWhatsApp(telefone, mensagem);
+  
+        resultados.push({
+          aluno,
+          telefone,
+          valor: pagamento.valor,
+          vencimento: dataVencimento,
+          status: envio.sucesso ? 'Enviado' : 'Falhou',
+          detalhe: envio.sucesso ? envio.response : envio.erro
+        });
+      }
+  
+      const totalEnviados = resultados.filter(r => r.status === 'Enviado').length;
+      const totalFalhas = resultados.filter(r => r.status === 'Falhou').length;
+  
+      return {
+        statusCode: 200,
+        body: JSON.stringify({
+          message: 'Verificação de vencimentos concluída',
+          total_pagamentos: pagamentos.length,
+          total_enviados: totalEnviados,
+          total_falhas: totalFalhas,
+          resultados
+        }, null, 2)
+      };
+  
+    } catch (error) {
+      console.error('❌ Erro geral na função:', error);
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ error: 'Erro ao processar verificação de vencimentos', detalhe: error.message })
+      };
+    }
+  };
