@@ -37,13 +37,18 @@ function verificarAcesso() {
     try {
         const usuario = JSON.parse(localStorage.getItem('usuario'));
         const isAdministrador = isAdmin(); // Usa a função robusta
-        const paginaAtual = window.location.pathname.split('/').pop().toLowerCase();
+        
+        // Obtém o caminho atual e normaliza para lowercase
+        const path = window.location.pathname.toLowerCase();
+        const paginaAtual = path.split('/').pop();
+        console.log('Página atual:', paginaAtual);
+        console.log('Caminho completo:', path);
 
-        // Lista de páginas restritas a administradores
-        const paginasAdmin = ['alunos.html'];
+        // Lista de páginas restritas a administradores (incluindo variações)
+        const paginasAdmin = ['alunos.html', 'alunos', '/alunos.html', '/alunos'];
 
         // Se não for administrador e tentar acessar uma página restrita, redireciona
-        if (!isAdministrador && paginasAdmin.includes(paginaAtual)) {
+        if (!isAdministrador && paginasAdmin.some(pagina => path.includes(pagina.toLowerCase()))) {
             console.log('Acesso negado: usuário não é administrador');
             window.location.href = 'principal.html';
             return;
@@ -60,10 +65,13 @@ function verificarAcesso() {
 // Configura a interface baseada no perfil do usuário
 function configurarInterface(isAdministrador) {
     // Oculta/mostra itens do menu principal
-    const menuAlunos = document.querySelector('a[href="Alunos.html"]')?.parentElement;
-    if (menuAlunos) {
-        menuAlunos.style.display = isAdministrador ? '' : 'none';
-    }
+    const menuItens = document.querySelectorAll('a[href*="alunos" i]'); // Case insensitive
+    menuItens.forEach(item => {
+        const menuItem = item.parentElement;
+        if (menuItem) {
+            menuItem.style.display = isAdministrador ? '' : 'none';
+        }
+    });
 
     // Se estiver na página de alunos, configura os elementos
     if (window.location.pathname.toLowerCase().includes('alunos')) {
