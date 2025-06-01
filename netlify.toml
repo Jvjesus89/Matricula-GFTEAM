@@ -1,0 +1,9 @@
+[build]
+  functions = "netlify/functions"
+
+[[plugins]]
+package = "@netlify/plugin-functions-install-core"
+
+# Configuração do cron job para verificar vencimentos
+[functions.verificarVencimentos]
+schedule = "@daily" # Executa uma vez por dia 
