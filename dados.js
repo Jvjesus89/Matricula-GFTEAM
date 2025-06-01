@@ -44,10 +44,13 @@ async function verificarLogin() {
       // Garante que o perfil seja salvo corretamente
       const dadosUsuario = {
         ...data.usuario,
-        usuario_perfil: data.usuario.usuario_perfil || {
-          isadministrador: data.usuario.idperfilusuario === 1
-        }
+        usuario_perfil: data.usuario.usuario_perfil || null,
+        idperfilusuario: data.usuario.idperfilusuario
       };
+
+      // Verifica se é administrador antes de salvar
+      console.log('Dados do usuário:', dadosUsuario);
+      console.log('É administrador:', dadosUsuario.usuario_perfil?.isadministrador === true || dadosUsuario.idperfilusuario === 1);
 
       // Armazena os dados do usuário no localStorage
       localStorage.setItem('usuario', JSON.stringify(dadosUsuario));

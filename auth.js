@@ -13,10 +13,17 @@ function verificarAutenticacao() {
 function isAdmin() {
     try {
         const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+        console.log('Verificando permissões:', usuario);
+        
         // Verifica se o usuário tem o perfil e se é administrador
-        return usuario?.usuario_perfil?.isadministrador === true || 
-               // Fallback para verificar pelo ID do perfil (1 = admin)
-               usuario?.idperfilusuario === 1;
+        const isAdminByProfile = usuario?.usuario_perfil?.isadministrador === true;
+        const isAdminById = usuario?.idperfilusuario === 1;
+        
+        console.log('Admin por perfil:', isAdminByProfile);
+        console.log('Admin por ID:', isAdminById);
+        console.log('Dados do perfil:', usuario?.usuario_perfil);
+        
+        return isAdminByProfile || isAdminById;
     } catch (error) {
         console.error('Erro ao verificar permissões:', error);
         return false;
