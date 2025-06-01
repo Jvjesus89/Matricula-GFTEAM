@@ -63,6 +63,26 @@ function configurarInterface(isAdministrador) {
         menuAlunos.style.display = isAdministrador ? '' : 'none';
     }
 
+    // Se estiver na página de alunos, configura os elementos
+    if (window.location.pathname.toLowerCase().includes('alunos')) {
+        // Oculta a aba de cadastro para não administradores
+        const abaCadastro = document.querySelector('.nav-tabs li a[href="#cadastro"]')?.parentElement;
+        if (abaCadastro && !isAdministrador) {
+            abaCadastro.style.display = 'none';
+            // Força a exibição da primeira aba disponível
+            const primeiraAba = document.querySelector('.nav-tabs li:not([style*="display: none"]) a');
+            if (primeiraAba) {
+                primeiraAba.click();
+            }
+        }
+
+        // Oculta o botão de cadastrar para não administradores
+        const btnCadastrar = document.getElementById('btnCadastrarAluno');
+        if (btnCadastrar) {
+            btnCadastrar.style.display = isAdministrador ? '' : 'none';
+        }
+    }
+
     // Se estiver na página de financeiro, configura os elementos
     if (window.location.pathname.toLowerCase().includes('financeiro')) {
         const usuario = JSON.parse(localStorage.getItem('usuario'));
