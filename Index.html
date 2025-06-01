@@ -1,61 +1,61 @@
+<!DOCTYPE html>
 <html>
-<head style="background-color: aliceblue;">
+<head>
     <title>GF TEAM</title>
-    <meta media="viewport" content="width=devide-width">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="picture/gfteam.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="picture/gfteam.png">
+    <link rel="shortcut icon" type="image/png" href="picture/gfteam.png">
+    <link rel="apple-touch-icon" href="picture/gfteam.png">
+    <!-- Estilos -->
     <link rel="stylesheet" href="css/stylepadrao.css">
-    <link rel="stylesheet" href="css/bootstrap.css">
-
-    
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-  
-  
-    <script src="conectionBase.js"></script>
-    <script src="dados.js"></script>
-    <script src="layout.js"></script>
+    <link rel="stylesheet" href="css/bootstrap.css">    
 </head>
 
 <body>
     <br>
-<br>
-<br>
-<br>
-
-
+    <br>
+    <br>
+    <br>
 
     <div style="align-items: center; justify-content: center; display: flex;">
-        <img src="picture/gfteam.png" style="height: 150;">
+        <img src="picture/gfteam.png" style="height: 180px;">
     </div>
 
+    <br>
+    <br>
+    <br>
 
-<br>
-<br>
-<br>
+    <div class="container">
+        <main>
+            <form id="formCadastro">
+                <div class="form-grupo">
+                    <label for="usuario" style="color: #ffffff;">Login:</label>
+                    <input type="text" id="usuario" name="usuario" autocomplete="username" required>
+                </div>
 
-<div class="container">
-    <main>
-        <form id="formCadastro">
-            <div class="form-grupo">
-                <label for="nome" style="color: aliceblue;">Login:</label>
-                <input type="text" id="usuario" required>
-                <br>
-            </div>
-            <br>
-            <div class="form-senha">
-                <label for="senha" style="color: aliceblue;">Senha:</label>
-                <input type="password" id="senha" required>
-            </div>
-            <br>
-            <button id="botao"  type="button" onclick="verificarLogin()">Acessar</button>
-        </form>
-    </main>
-</div>
+                <div class="form-grupo">
+                    <label for="senha" style="color: #ffffff;">Senha:</label>
+                    <input type="password" id="senha" required autocomplete="current-password">
+                </div>
 
-<div class="imagem-footer">
-    <img src="picture/Screenshot_2.png" alt="">
-</div>
+                <button id="botao" type="button" onclick="verificarLogin()">Acessar</button>
+            </form>
+        </main>
+    </div>
 
+    <div class="imagem-footer">
+        <img src="picture/Screenshot_2.png" alt="GF TEAM">
+    </div>
 
-    
+    <div id="footer-placeholder"></div>
+   
+    <!-- jQuery primeiro -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <!-- Depois seus scripts -->
+    <script src="dados.js"></script>
+    <script src="layout.js"></script>
 </body>
+</html>
