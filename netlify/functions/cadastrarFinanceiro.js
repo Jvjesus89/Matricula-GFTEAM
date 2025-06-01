@@ -23,39 +23,62 @@ exports.handler = async function(event, context) {
     };
   }
 
-  const { idusuario, valor, status, dtpagamento } = financeiro;
+  const { idfinanceiro, idusuario, valor, data_vencimento } = financeiro;
 
-  if (!idusuario || !valor || !status || !dtpagamento) {
+  // Validação dos campos obrigatórios
+  if (!idusuario || !valor || !data_vencimento) {
     return {
       statusCode: 400,
-      body: JSON.stringify({ error: 'Todos os campos são obrigatórios.' }),
+      body: JSON.stringify({ error: 'Os campos Aluno, Valor e Data de Vencimento são obrigatórios.' }),
     };
   }
 
-  const { data, error } = await supabase
-    .from('financeiro')
-    .insert([
-      {
-        idusuario,
-        valor,
-        status,
-        dtpagamento
-      }
-    ])
-    .select();
+  try {
+    let result;
+    
+    if (idfinanceiro) {
+      // Atualização de registro existente
+      const { data, error } = await supabase
+        .from('financeiro')
+        .update({
+          idusuario,
+          valor,
+          data_vencimento,
+          data_pagamento: financeiro.data_pagamento
+        })
+        .eq('idfinanceiro', idfinanceiro)
+        .select();
 
-  if (error) {
+      if (error) throw error;
+      result = data[0];
+    } else {
+      // Inserção de novo registro
+      const { data, error } = await supabase
+        .from('financeiro')
+        .insert([{
+          idusuario,
+          valor,
+          data_vencimento,
+          data_pagamento: financeiro.data_pagamento
+        }])
+        .select();
+
+      if (error) throw error;
+      result = data[0];
+    }
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        message: idfinanceiro ? 'Pagamento atualizado com sucesso!' : 'Pagamento registrado com sucesso!',
+        financeiro: result
+      }),
+    };
+  } catch (error) {
+    console.error('Erro ao processar pagamento:', error);
     return {
       statusCode: 500,
       body: JSON.stringify({ error: error.message }),
     };
   }
-
-  return {
-    statusCode: 200,
-    body: JSON.stringify({
-      message: 'Pagamento registrado com sucesso!',
-      financeiro: data[0]
-    }),
-  };
 }; 
