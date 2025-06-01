@@ -42,7 +42,9 @@ function verificarAcesso() {
         // Lista de páginas restritas a administradores
         const paginasAdmin = ['alunos.html'];
 
-        if (paginasAdmin.includes(paginaAtual) && !isAdministrador) {
+        // Se não for administrador e tentar acessar uma página restrita, redireciona
+        if (!isAdministrador && paginasAdmin.includes(paginaAtual)) {
+            console.log('Acesso negado: usuário não é administrador');
             window.location.href = 'principal.html';
             return;
         }
