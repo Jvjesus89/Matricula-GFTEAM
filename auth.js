@@ -115,9 +115,27 @@ function configurarInterface(isAdministrador) {
                 btnCadastrar.style.display = 'none';
             }
 
-            // Oculta os botões de ação na tabela se ela já estiver inicializada
+            // Configura a visibilidade dos botões de ação na tabela
             if (window.tabelaFinanceiro) {
-                window.tabelaFinanceiro.column(-1).visible(false);
+                // Oculta a coluna de ações
+                window.tabelaFinanceiro.column(-1).visible(true);
+                
+                // Modifica o render da coluna de ações para mostrar apenas o botão de impressão
+                window.tabelaFinanceiro.column(-1).render = function(data, type, row) {
+                    if (type === 'display') {
+                        // Só mostra o botão de impressão se tiver data de pagamento
+                        if (row.data_pagamento) {
+                            return `<div class="btn-group">
+                                <button onclick="imprimirComprovante(${row.idfinanceiro})" class="btn btn-success btn-sm" title="Imprimir Comprovante">🖨️</button>
+                            </div>`;
+                        }
+                        return ''; // Não mostra nenhum botão se não estiver pago
+                    }
+                    return data;
+                };
+                
+                // Redesenha a tabela para aplicar as mudanças
+                window.tabelaFinanceiro.draw();
             }
 
             // Filtra apenas os registros do usuário atual

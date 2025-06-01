@@ -58,6 +58,55 @@ $(document).ready(function() {
   // Move o campo de busca para dentro do topo-tabela
   $('.dataTables_filter').appendTo('.topo-tabela');
 
+  // Função para definir as datas padrão
+  function setDefaultDates() {
+    const hoje = new Date();
+    
+    // Data inicial: 1 mês atrás
+    const dataInicial = new Date();
+    dataInicial.setMonth(dataInicial.getMonth() - 1);
+    
+    // Data final: 10 dias à frente
+    const dataFinal = new Date();
+    dataFinal.setDate(dataFinal.getDate() + 10);
+    
+    // Formata as datas para o formato YYYY-MM-DD
+    document.getElementById('dataInicial').value = dataInicial.toISOString().split('T')[0];
+    document.getElementById('dataFinal').value = dataFinal.toISOString().split('T')[0];
+    
+    return { dataInicial, dataFinal };
+  }
+
+  // Função para filtrar os dados por data
+  function filtrarPorData() {
+    const dataInicial = new Date(document.getElementById('dataInicial').value);
+    const dataFinal = new Date(document.getElementById('dataFinal').value);
+    
+    // Ajusta as datas para considerar o dia inteiro
+    dataInicial.setHours(0, 0, 0, 0);
+    dataFinal.setHours(23, 59, 59, 999);
+
+    // Adiciona o filtro personalizado
+    $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
+      const dataVencimento = new Date(data[3].split('/').reverse().join('-'));
+      dataVencimento.setHours(0, 0, 0, 0);
+      
+      return dataVencimento >= dataInicial && dataVencimento <= dataFinal;
+    });
+
+    // Aplica o filtro
+    window.tabelaFinanceiro.draw();
+
+    // Remove o filtro personalizado
+    $.fn.dataTable.ext.search.pop();
+  }
+
+  // Inicializa as datas padrão
+  setDefaultDates();
+
+  // Adiciona o evento de click no botão de filtrar
+  $('#btnFiltrar').on('click', filtrarPorData);
+
   // Função para carregar os dados financeiros
   window.carregarFinanceiro = function() {
     // Verifica se deve filtrar por usuário
@@ -74,13 +123,10 @@ $(document).ready(function() {
       .then(data => {
         window.tabelaFinanceiro.clear();
         window.tabelaFinanceiro.rows.add(data);
-        
-        // Se não for administrador, oculta a coluna de ações
-        if (!isAdmin) {
-          window.tabelaFinanceiro.column(-1).visible(false);
-        }
-        
         window.tabelaFinanceiro.draw();
+        
+        // Aplica o filtro de data após carregar os dados
+        filtrarPorData();
       })
       .catch(error => {
         console.error('Erro ao buscar dados financeiros:', error);
