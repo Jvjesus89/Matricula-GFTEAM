@@ -34,7 +34,8 @@ main {
 
 /*Consulta aluno*/ 
 .container-ConsultaAluno {
-    width: 1000px;
+    width: 100%;
+    max-width: 1000px;
     min-height: 600px;
     height: auto;
     padding: 30px;
@@ -45,6 +46,7 @@ main {
     align-items: center;
     font-size: 20px;
     background-color: rgb(247, 247, 247);
+    box-sizing: border-box;
 }
 
 .container-ConsultaAluno .dataTables_wrapper {
@@ -419,4 +421,141 @@ table.dataTable .coluna-valor {
 .container-graficos h2 {
   text-align: center;
   margin-bottom: 30px;
+}
+
+/* Ajustes responsivos para dispositivos móveis */
+@media screen and (max-width: 768px) {
+  .container-ConsultaAluno {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    min-height: auto;
+  }
+
+  .container-ConsultaAluno .filtro-data .row {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .container-ConsultaAluno .filtro-data .row > div {
+    width: 100%;
+    margin-bottom: 10px;
+    padding: 0;
+  }
+
+  .container-ConsultaAluno .filtro-data .row > div:not(:first-child) {
+    margin-left: 0;
+  }
+
+  .nav-tabs.sub-menu {
+    width: 100%;
+    margin: 10px 0;
+  }
+
+  .container-Cadastro {
+    padding: 15px;
+    margin: 10px;
+    width: 95%;
+  }
+
+  .form-grupo input,
+  .form-grupo select {
+    font-size: 16px;
+  }
+
+  /* Ajustes para a tabela em dispositivos móveis */
+  .table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  table.dataTable {
+    width: 100% !important;
+    font-size: 14px;
+  }
+
+  table.dataTable thead th {
+    padding: 8px 4px;
+    white-space: nowrap;
+  }
+
+  table.dataTable tbody td {
+    padding: 6px 4px;
+    white-space: nowrap;
+  }
+
+  .btn-group {
+    flex-wrap: wrap;
+    gap: 3px;
+  }
+
+  .btn-group button {
+    padding: 3px 6px;
+    font-size: 12px;
+  }
+
+  /* Ajuste para o modal em dispositivos móveis */
+  .modal-content {
+    width: 95%;
+    margin: 10px auto;
+    padding: 15px;
+  }
+
+  /* Ajustes para os gráficos */
+  .container-graficos {
+    width: 100%;
+    padding: 15px;
+    margin: 10px 0;
+  }
+
+  .container-graficos .row {
+    margin: 0;
+  }
+
+  .container-graficos .col-md-6 {
+    width: 100%;
+    padding: 0;
+    margin-bottom: 20px;
+  }
+}
+
+/* Ajustes para telas muito pequenas */
+@media screen and (max-width: 480px) {
+  .container-ConsultaAluno {
+    padding: 5px;
+    margin: 5px 0;
+  }
+
+  .container-ConsultaAluno .topo-tabela {
+    flex-direction: column;
+  }
+
+  .container-ConsultaAluno .botao {
+    width: 100%;
+    margin-bottom: 10px;
+  }
+
+  .container-ConsultaAluno .botao button {
+    width: 100%;
+  }
+
+  table.dataTable {
+    font-size: 12px;
+  }
+
+  .coluna-acoes {
+    min-width: 100px !important;
+  }
+
+  .dataTables_wrapper .dataTables_filter {
+    width: 100%;
+    text-align: left;
+    margin-bottom: 10px;
+  }
+
+  .dataTables_wrapper .dataTables_filter input {
+    width: 100%;
+    margin-left: 0;
+  }
 }

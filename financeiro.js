@@ -35,13 +35,27 @@ $(document).ready(function() {
     lengthChange: false,
     dom: 'frtip',
     responsive: true,
+    autoWidth: false,
+    scrollX: true,
+    scrollCollapse: true,
+    fixedHeader: true,
     order: [[3, 'asc'], [0, 'asc']],
     columns: [
-      { data: 'usuario' },
-      { data: 'nome' },
+      { 
+        data: 'usuario',
+        responsivePriority: 2,
+        width: '15%'
+      },
+      { 
+        data: 'nome',
+        responsivePriority: 1,
+        width: '25%'
+      },
       { 
         data: 'valor',
         className: 'coluna-valor',
+        responsivePriority: 3,
+        width: '15%',
         render: function(data) {
           return `R$ ${parseFloat(data).toFixed(2)}`;
         }
@@ -49,6 +63,8 @@ $(document).ready(function() {
       { 
         data: 'data_vencimento',
         type: 'date',
+        responsivePriority: 4,
+        width: '15%',
         render: function(data) {
           return new Date(data).toLocaleDateString('pt-BR');
         }
@@ -56,6 +72,8 @@ $(document).ready(function() {
       { 
         data: 'data_pagamento',
         type: 'date',
+        responsivePriority: 5,
+        width: '15%',
         render: function(data) {
           return data ? new Date(data).toLocaleDateString('pt-BR') : 'Pendente';
         }
@@ -64,6 +82,8 @@ $(document).ready(function() {
         data: null,
         orderable: false,
         className: 'dt-center coluna-acoes',
+        responsivePriority: 6,
+        width: '15%',
         render: function(data, type, row) {
           const btnImprimir = row.data_pagamento 
             ? `<button onclick="imprimirComprovante(${row.idfinanceiro})" class="btn btn-success btn-sm" style="margin-right: 5px;" title="Imprimir Comprovante">🖨️</button>` 
@@ -81,7 +101,18 @@ $(document).ready(function() {
           </div>`;
         }
       }
-    ]
+    ],
+    initComplete: function() {
+      // Ajusta a largura da tabela após a inicialização
+      $(window).trigger('resize');
+    }
+  });
+
+  // Ajusta a tabela quando a janela é redimensionada
+  $(window).on('resize', function() {
+    if (window.tabelaFinanceiro) {
+      window.tabelaFinanceiro.columns.adjust();
+    }
   });
 
   // Move o campo de busca para dentro do campo-busca
