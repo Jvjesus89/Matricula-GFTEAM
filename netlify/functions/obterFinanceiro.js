@@ -29,7 +29,8 @@ exports.handler = async function(event, context) {
         idusuario,
         usuarios (
           nome,
-          usuario
+          usuario,
+          telefone
         )
       `)
       .order('data_vencimento', { ascending: true });
@@ -52,7 +53,8 @@ exports.handler = async function(event, context) {
     const formattedData = data.map(item => ({
       ...item,
       nome: item.usuarios?.nome || 'Usuário não encontrado',
-      usuario: item.usuarios?.usuario || 'N/A'
+      usuario: item.usuarios?.usuario || 'N/A',
+      telefone: item.usuarios?.telefone || null
     }));
 
     return {

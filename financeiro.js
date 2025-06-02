@@ -2,10 +2,34 @@ $(document).ready(function() {
   // Define a tabela DataTables e disponibiliza no escopo global
   window.tabelaFinanceiro = $('#tabela-financeiro').DataTable({
     language: {
-      url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/pt-BR.json',
-      info: '', 
-      infoEmpty: '', 
-      infoFiltered: '' 
+      "sEmptyTable": "Nenhum registro encontrado",
+      "sInfo": "Mostrando de _START_ até _END_ de _TOTAL_ registros",
+      "sInfoEmpty": "Mostrando 0 até 0 de 0 registros",
+      "sInfoFiltered": "(Filtrados de _MAX_ registros)",
+      "sInfoPostFix": "",
+      "sInfoThousands": ".",
+      "sLengthMenu": "_MENU_ resultados por página",
+      "sLoadingRecords": "Carregando...",
+      "sProcessing": "Processando...",
+      "sZeroRecords": "Nenhum registro encontrado",
+      "sSearch": "Pesquisar",
+      "oPaginate": {
+        "sNext": "Próximo",
+        "sPrevious": "Anterior",
+        "sFirst": "Primeiro",
+        "sLast": "Último"
+      },
+      "oAria": {
+        "sSortAscending": ": Ordenar colunas de forma ascendente",
+        "sSortDescending": ": Ordenar colunas de forma descendente"
+      },
+      "select": {
+        "rows": {
+          "_": "Selecionado %d linhas",
+          "0": "Nenhuma linha selecionada",
+          "1": "Selecionado 1 linha"
+        }
+      }
     },
     pageLength: 25,
     lengthChange: false,
@@ -45,8 +69,13 @@ $(document).ready(function() {
             ? `<button onclick="imprimirComprovante(${row.idfinanceiro})" class="btn btn-success btn-sm" style="margin-right: 5px;" title="Imprimir Comprovante">🖨️</button>` 
             : '';
             
+          const btnWhatsApp = !row.data_pagamento 
+            ? `<button onclick="enviarWhatsApp(${row.idfinanceiro})" class="btn btn-success btn-sm" style="margin-right: 5px;" title="Enviar WhatsApp">📱</button>` 
+            : '';
+            
           return `<div class="btn-group">
             ${btnImprimir}
+            ${btnWhatsApp}
             <button onclick="editarFinanceiro(${row.idfinanceiro})" class="btn btn-primary btn-sm" style="margin-right: 5px;">✏️</button>
             <button onclick="excluirFinanceiro(${row.idfinanceiro})" class="btn btn-danger btn-sm">🗑️</button>
           </div>`;
@@ -297,6 +326,62 @@ $(document).ready(function() {
         console.error('Erro ao excluir:', error);
         alert('Erro inesperado. Tente novamente.');
       });
+    }
+  };
+
+  // Função para enviar mensagem pelo WhatsApp
+  window.enviarWhatsApp = async function(idfinanceiro) {
+    try {
+      const response = await fetch(`/.netlify/functions/obterFinanceiro?idfinanceiro=${idfinanceiro}`);
+      if (!response.ok) {
+        throw new Error('Erro ao buscar dados do registro');
+      }
+      const data = await response.json();
+      const registro = data.find(f => f.idfinanceiro === idfinanceiro);
+      if (!registro) {
+        throw new Error('Registro não encontrado');
+      }
+
+      if (!registro.telefone) {
+        throw new Error('Aluno não possui número de telefone cadastrado');
+      }
+
+      // Formata a data para o padrão brasileiro
+      const dataVencimento = new Date(registro.data_vencimento).toLocaleDateString('pt-BR');
+
+      // Formata o telefone (remove caracteres não numéricos e adiciona o código do país)
+      const telefoneFormatado = '55' + registro.telefone.replace(/\D/g, '');
+
+      console.log('Enviando dados:', {
+        telefone: telefoneFormatado,
+        nome: registro.nome,
+        valor: `R$ ${parseFloat(registro.valor).toFixed(2)}`,
+        dataVencimento: dataVencimento
+      });
+
+      const responseWhatsApp = await fetch('/.netlify/functions/enviarWhatsApp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          telefone: telefoneFormatado,
+          nome: registro.nome,
+          valor: `R$ ${parseFloat(registro.valor).toFixed(2)}`,
+          dataVencimento: dataVencimento
+        })
+      });
+
+      const dataWhatsApp = await responseWhatsApp.json();
+      
+      if (!dataWhatsApp.sucesso) {
+        throw new Error(JSON.stringify(dataWhatsApp.erro) || 'Erro ao enviar mensagem');
+      }
+
+      alert('Mensagem enviada com sucesso!');
+    } catch (error) {
+      console.error('Erro detalhado:', error);
+      alert('Erro ao enviar mensagem: ' + (error.message || 'Erro desconhecido'));
     }
   };
 

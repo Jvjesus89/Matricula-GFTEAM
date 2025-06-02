@@ -123,13 +123,16 @@ function configurarInterface(isAdministrador) {
                 // Modifica o render da coluna de ações para mostrar apenas o botão de impressão
                 window.tabelaFinanceiro.column(-1).render = function(data, type, row) {
                     if (type === 'display') {
-                        // Só mostra o botão de impressão se tiver data de pagamento
+                        // Mostra o botão de impressão se tiver data de pagamento
                         if (row.data_pagamento) {
                             return `<div class="btn-group">
                                 <button onclick="imprimirComprovante(${row.idfinanceiro})" class="btn btn-success btn-sm" title="Imprimir Comprovante">🖨️</button>
                             </div>`;
                         }
-                        return ''; // Não mostra nenhum botão se não estiver pago
+                        // Mostra o botão de WhatsApp se não tiver data de pagamento
+                        return `<div class="btn-group">
+                            <button onclick="enviarWhatsApp(${row.idfinanceiro})" class="btn btn-success btn-sm" title="Enviar WhatsApp">📱</button>
+                        </div>`;
                     }
                     return data;
                 };
