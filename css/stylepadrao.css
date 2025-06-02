@@ -228,15 +228,73 @@ table.dataTable {
 
 .container-ConsultaAluno .topo-tabela {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  gap: 15px;
   margin-top: 10px;
   width: 100%;
 }
 
 .container-ConsultaAluno .botao {
+  display: flex;
+  justify-content: flex-start;
+  width: 100%;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+.container-ConsultaAluno .filtro-data {
+  display: flex;
+  align-items: flex-end;
+  width: 100%;
+}
+
+.container-ConsultaAluno .filtro-data .row {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
   margin: 0;
-  order: -1;
+  width: 100%;
+}
+
+.container-ConsultaAluno .filtro-data .col-md-4 {
+  width: auto;
+  min-width: 180px;
+  display: flex;
+  flex-direction: column;
+}
+
+.container-ConsultaAluno .filtro-data .col-md-4 label {
+  margin-bottom: 5px;
+}
+
+.container-ConsultaAluno .filtro-data .col-md-2 {
+  margin: 0 !important;
+  width: auto;
+  display: flex;
+  align-items: flex-end;
+}
+
+.container-ConsultaAluno .dataTables_filter {
+  margin: 0 !important;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.container-ConsultaAluno .dataTables_filter label {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.container-ConsultaAluno .dataTables_filter input {
+  margin-left: 5px;
+  width: 100%;
+}
+
+.container-ConsultaAluno .filtro-data .row > div:not(:first-child) {
+  margin-left: auto;
 }
 
 /* Estilos para as tabelas DataTables */

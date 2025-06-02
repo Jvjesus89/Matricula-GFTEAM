@@ -84,8 +84,8 @@ $(document).ready(function() {
     ]
   });
 
-  // Move o campo de busca para dentro do topo-tabela
-  $('.dataTables_filter').appendTo('.topo-tabela');
+  // Move o campo de busca para dentro do campo-busca
+  $('.dataTables_filter').appendTo('#campo-busca');
 
   // Função para definir as datas padrão
   function setDefaultDates() {
