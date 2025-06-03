@@ -90,11 +90,11 @@ exports.handler = async function(event, context) {
         to: numeroFormatado,
         type: 'template',
         template: {
-          name: 'cobrana',
+          name: 'hello_world',
           language: {
-            code: 'pt_BR'
+            code: 'en_US'
           },
-          components: [
+          /*components: [
             {
               type: 'body',
               parameters: [
@@ -112,7 +112,7 @@ exports.handler = async function(event, context) {
                 }
               ]
             }
-          ]
+          ]*/
         }
       }
     });
