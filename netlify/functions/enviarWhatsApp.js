@@ -37,12 +37,12 @@ exports.handler = async function(event, context) {
   }
 
   try {
-    const { telefone, nome, valor, dataVencimento } = JSON.parse(event.body);
+    const { telefone, usuario, valor, dataVencimento } = JSON.parse(event.body);
 
-    if (!telefone || !nome || !valor || !dataVencimento) {
+    if (!telefone || !usuario || !valor || !dataVencimento) {
       console.log('❌ Dados incompletos:', { 
         telefone: !!telefone, 
-        nome: !!nome, 
+        usuario: !!usuario, 
         valor: !!valor, 
         dataVencimento: !!dataVencimento 
       });
@@ -61,7 +61,7 @@ exports.handler = async function(event, context) {
     console.log('📱 Número formatado:', numeroFormatado);
 
     console.log('📤 Enviando mensagem para:', numeroFormatado);
-    console.log('📝 Dados da mensagem:', { nome, valor, dataVencimento });
+    console.log('📝 Dados da mensagem:', { usuario, valor, dataVencimento });
 
     // Verifica o status do número do WhatsApp
     try {
@@ -90,17 +90,17 @@ exports.handler = async function(event, context) {
         to: numeroFormatado,
         type: 'template',
         template: {
-          name: 'hello_world',
+          name: 'cobrana',
           language: {
-            code: 'en_US'
+            code: 'pt_BR'
           },
-          /*components: [
+          components: [
             {
               type: 'body',
               parameters: [
                 {
                   type: 'text',
-                  text: nome
+                  text: usuario
                 },
                 {
                   type: 'text',
@@ -112,7 +112,7 @@ exports.handler = async function(event, context) {
                 }
               ]
             }
-          ]*/
+          ]
         }
       }
     });

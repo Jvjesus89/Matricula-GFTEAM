@@ -59,7 +59,8 @@ $(document).ready(function() {
         render: function(data) {
           return `R$ ${parseFloat(data).toFixed(2)}`;
         }
-      },
+      },    
+
       { 
         data: 'data_vencimento',
         type: 'date',
@@ -385,7 +386,7 @@ $(document).ready(function() {
 
       console.log('Enviando dados:', {
         telefone: telefoneFormatado,
-        nome: registro.nome,
+        usuario: registro.usuario,
         valor: `R$ ${parseFloat(registro.valor).toFixed(2)}`,
         dataVencimento: dataVencimento
       });
@@ -397,7 +398,7 @@ $(document).ready(function() {
         },
         body: JSON.stringify({
           telefone: telefoneFormatado,
-          nome: registro.nome,
+          usuario: registro.usuario,
           valor: `R$ ${parseFloat(registro.valor).toFixed(2)}`,
           dataVencimento: dataVencimento
         })
