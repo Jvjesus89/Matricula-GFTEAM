@@ -1,8 +1,17 @@
 {
+  "name": "gf-team",
+  "version": "1.0.0",
+  "description": "Sistema de Matrícula GFTEAM",
+  "scripts": {
+    "build": "echo 'Build completed'",
+    "dev": "netlify dev"
+  },
   "dependencies": {
-    "@supabase/supabase-js": "^2.49.8",
-    "axios": "^1.9.0",
-    "dotenv": "^16.5.0",
-    "express": "^5.1.0"
+    "@netlify/functions": "^2.0.0",
+    "@supabase/supabase-js": "^2.39.0",
+    "axios": "^1.6.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
