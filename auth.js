@@ -13,17 +13,7 @@ function verificarAutenticacao() {
 function isAdmin() {
     try {
         const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
-        console.log('Verificando permissões:', usuario);
-        
-        // Verifica se o usuário tem o perfil e se é administrador
-        const isAdminByProfile = usuario?.usuario_perfil?.isadministrador === true;
-        const isAdminById = usuario?.idperfilusuario === 1;
-        
-        console.log('Admin por perfil:', isAdminByProfile);
-        console.log('Admin por ID:', isAdminById);
-        console.log('Dados do perfil:', usuario?.usuario_perfil);
-        
-        return isAdminByProfile || isAdminById;
+        return usuario?.usuario_perfil?.isadministrador === true;
     } catch (error) {
         console.error('Erro ao verificar permissões:', error);
         return false;
@@ -36,20 +26,22 @@ function verificarAcesso() {
 
     try {
         const usuario = JSON.parse(localStorage.getItem('usuario'));
-        const isAdministrador = isAdmin(); // Usa a função robusta
+        const isAdministrador = isAdmin();
         
         // Obtém o caminho atual e normaliza para lowercase
         const path = window.location.pathname.toLowerCase();
         const paginaAtual = path.split('/').pop();
         console.log('Página atual:', paginaAtual);
         console.log('Caminho completo:', path);
+        console.log('É administrador:', isAdministrador);
 
-        // Lista de páginas restritas a administradores (incluindo variações)
+        // Lista de páginas restritas a administradores
         const paginasAdmin = ['alunos.html', 'alunos', '/alunos.html', '/alunos'];
 
         // Se não for administrador e tentar acessar uma página restrita, redireciona
         if (!isAdministrador && paginasAdmin.some(pagina => path.includes(pagina.toLowerCase()))) {
             console.log('Acesso negado: usuário não é administrador');
+            alert('Você não tem permissão para acessar esta página.');
             window.location.href = 'principal.html';
             return;
         }
@@ -64,6 +56,8 @@ function verificarAcesso() {
 
 // Configura a interface baseada no perfil do usuário
 function configurarInterface(isAdministrador) {
+    console.log('Configurando interface. É administrador:', isAdministrador);
+
     // Oculta/mostra itens do menu principal
     const menuItens = document.querySelectorAll('a[href*="alunos" i]'); // Case insensitive
     menuItens.forEach(item => {
@@ -91,6 +85,11 @@ function configurarInterface(isAdministrador) {
         if (btnCadastrar) {
             btnCadastrar.style.display = isAdministrador ? '' : 'none';
         }
+
+        // Recarrega a tabela para atualizar os botões
+        if (typeof carregarUsuarios === 'function') {
+            carregarUsuarios();
+        }
     }
 
     // Se estiver na página de financeiro, configura os elementos
@@ -117,22 +116,20 @@ function configurarInterface(isAdministrador) {
 
             // Configura a visibilidade dos botões de ação na tabela
             if (window.tabelaFinanceiro) {
-                // Oculta a coluna de ações
-                window.tabelaFinanceiro.column(-1).visible(true);
-                
-                // Modifica o render da coluna de ações para mostrar apenas o botão de impressão
+                // Modifica o render da coluna de ações para mostrar apenas o botão de impressão ou WhatsApp
                 window.tabelaFinanceiro.column(-1).render = function(data, type, row) {
                     if (type === 'display') {
+                        let botoes = '';
+                        
                         // Mostra o botão de impressão se tiver data de pagamento
                         if (row.data_pagamento) {
-                            return `<div class="btn-group">
-                                <button onclick="imprimirComprovante(${row.idfinanceiro})" class="btn btn-success btn-sm" title="Imprimir Comprovante">🖨️</button>
-                            </div>`;
+                            botoes += `<button onclick="imprimirComprovante(${row.idfinanceiro})" class="btn btn-success btn-sm" title="Imprimir Comprovante">🖨️</button>`;
+                        } else {
+                            // Mostra o botão de WhatsApp se não tiver data de pagamento
+                            botoes += `<button onclick="enviarWhatsApp(${row.idfinanceiro})" class="btn btn-success btn-sm" title="Enviar WhatsApp">📱</button>`;
                         }
-                        // Mostra o botão de WhatsApp se não tiver data de pagamento
-                        return `<div class="btn-group">
-                            <button onclick="enviarWhatsApp(${row.idfinanceiro})" class="btn btn-success btn-sm" title="Enviar WhatsApp">📱</button>
-                        </div>`;
+                        
+                        return `<div class="btn-group">${botoes}</div>`;
                     }
                     return data;
                 };

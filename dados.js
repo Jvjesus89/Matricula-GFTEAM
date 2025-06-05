@@ -41,16 +41,16 @@ async function verificarLogin() {
         throw new Error('Dados do usuário incompletos');
       }
 
+      console.log('Dados recebidos do servidor:', data);
+      console.log('Perfil do usuário:', data.usuario.usuario_perfil);
+
       // Garante que o perfil seja salvo corretamente
       const dadosUsuario = {
         ...data.usuario,
-        usuario_perfil: data.usuario.usuario_perfil || null,
-        idperfilusuario: data.usuario.idperfilusuario
+        usuario_perfil: data.usuario.usuario_perfil || null
       };
 
-      // Verifica se é administrador antes de salvar
-      console.log('Dados do usuário:', dadosUsuario);
-      console.log('É administrador:', dadosUsuario.usuario_perfil?.isadministrador === true || dadosUsuario.idperfilusuario === 1);
+      console.log('Dados a serem salvos:', dadosUsuario);
 
       // Armazena os dados do usuário no localStorage
       localStorage.setItem('usuario', JSON.stringify(dadosUsuario));
@@ -115,42 +115,33 @@ async function handleFormSubmit(event) {
 // Função para carregar dados dos usuários
 async function carregarUsuarios() {
   try {
-    // Carrega os perfis primeiro
-    const perfilResponse = await fetch('/.netlify/functions/obterPerfis');
-    if (!perfilResponse.ok) throw new Error('Erro ao carregar perfis');
-    const perfis = await perfilResponse.json();
-    
-    // Cria um mapa de ID -> Nome do perfil
-    const perfilMap = {};
-    perfis.forEach(p => perfilMap[p.idperfilusuario] = p.perfil);
-
     // Carrega os usuários
     const response = await fetch('/.netlify/functions/obterUsuarios');
     if (!response.ok) throw new Error('Erro ao carregar usuários');
     
     const usuarios = await response.json();
-    const tabela = $('#tabelaUsuarios').DataTable();
-    tabela.clear();
+    
+    if (!window.tabelaUsuarios) {
+      console.error('Tabela de usuários não inicializada');
+      return;
+    }
+
+    window.tabelaUsuarios.clear();
     
     usuarios.forEach(usuario => {
-      const acoes = `<div class="btn-group">
-        <button onclick="editarUsuario(${usuario.idusuario})" class="btn btn-primary btn-sm" style="margin-right: 5px;">✏️</button>
-        <button onclick="excluirUsuario(${usuario.idusuario})" class="btn btn-danger btn-sm">🗑️</button>
-      </div>`;
-      
-      tabela.row.add([
+      window.tabelaUsuarios.row.add([
         usuario.idusuario,
         usuario.usuario,
         usuario.nome,
         usuario.idade,
         usuario.telefone,
-        perfilMap[usuario.idperfilusuario] || 'Não definido',
-        acoes
+        usuario.usuario_perfil?.perfil || 'Não definido',
+        '' // A coluna de ações será preenchida pelo render
       ]);
     });
     
-    tabela.column(0).visible(false); // Oculta a coluna ID
-    tabela.draw();
+    window.tabelaUsuarios.column(0).visible(false); // Oculta a coluna ID
+    window.tabelaUsuarios.draw();
   } catch (error) {
     console.error('Erro ao carregar usuários:', error);
     alert('Erro ao carregar lista de usuários');
@@ -276,7 +267,7 @@ async function carregarPerfis() {
 $(document).ready(function() {
   // Inicializa DataTables se estiver na página de usuários
   if (document.getElementById('tabelaUsuarios')) {
-    const table = $('#tabelaUsuarios').DataTable({
+    window.tabelaUsuarios = $('#tabelaUsuarios').DataTable({
       language: {
         url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/pt-BR.json',
         info: '', 
@@ -285,7 +276,25 @@ $(document).ready(function() {
       },
       pageLength: 25,
       lengthChange: false,
-      dom: 'frtip'
+      dom: 'frtip',
+      columnDefs: [{
+        targets: -1, // Última coluna (ações)
+        render: function(data, type, row) {
+          if (type === 'display') {
+            const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+            const isAdmin = usuario?.usuario_perfil?.isadministrador === true;
+            
+            if (isAdmin) {
+              return `<div class="btn-group">
+                <button onclick="editarUsuario(${row[0]})" class="btn btn-primary btn-sm" style="margin-right: 5px;">✏️</button>
+                <button onclick="excluirUsuario(${row[0]})" class="btn btn-danger btn-sm">🗑️</button>
+              </div>`;
+            }
+            return '';
+          }
+          return data;
+        }
+      }]
     });
 
     // Move o campo de busca para dentro do topo-tabela

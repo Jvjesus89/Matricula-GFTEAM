@@ -86,20 +86,29 @@ $(document).ready(function() {
         responsivePriority: 6,
         width: '15%',
         render: function(data, type, row) {
-          const btnImprimir = row.data_pagamento 
-            ? `<button onclick="imprimirComprovante(${row.idfinanceiro})" class="btn btn-success btn-sm" style="margin-right: 5px;" title="Imprimir Comprovante">🖨️</button>` 
-            : '';
-            
-          const btnWhatsApp = !row.data_pagamento 
-            ? `<button onclick="enviarWhatsApp(${row.idfinanceiro})" class="btn btn-success btn-sm" style="margin-right: 5px;" title="Enviar WhatsApp">📱</button>` 
-            : '';
-            
-          return `<div class="btn-group">
-            ${btnImprimir}
-            ${btnWhatsApp}
-            <button onclick="editarFinanceiro(${row.idfinanceiro})" class="btn btn-primary btn-sm" style="margin-right: 5px;">✏️</button>
-            <button onclick="excluirFinanceiro(${row.idfinanceiro})" class="btn btn-danger btn-sm">🗑️</button>
-          </div>`;
+          // Verifica se o usuário é administrador
+          const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+          const isAdmin = usuario?.usuario_perfil?.isadministrador === true;
+
+          let botoes = '';
+          
+          // Mostra o botão de impressão se tiver data de pagamento
+          if (row.data_pagamento) {
+            botoes += `<button onclick="imprimirComprovante(${row.idfinanceiro})" class="btn btn-success btn-sm" style="margin-right: 5px;" title="Imprimir Comprovante">🖨️</button>`;
+          } else {
+            // Mostra o botão de WhatsApp se não tiver data de pagamento
+            botoes += `<button onclick="enviarWhatsApp(${row.idfinanceiro})" class="btn btn-success btn-sm" style="margin-right: 5px;" title="Enviar WhatsApp">📱</button>`;
+          }
+
+          // Adiciona os botões de editar e excluir apenas se for administrador
+          if (isAdmin) {
+            botoes += `
+              <button onclick="editarFinanceiro(${row.idfinanceiro})" class="btn btn-primary btn-sm" style="margin-right: 5px;">✏️</button>
+              <button onclick="excluirFinanceiro(${row.idfinanceiro})" class="btn btn-danger btn-sm">🗑️</button>
+            `;
+          }
+          
+          return `<div class="btn-group">${botoes}</div>`;
         }
       }
     ],

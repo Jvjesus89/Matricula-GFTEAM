@@ -16,7 +16,13 @@ exports.handler = async function(event, context) {
   try {
     const { data, error } = await supabase
       .from('usuarios')
-      .select('*')
+      .select(`
+        *,
+        usuario_perfil (
+          perfil,
+          isadministrador
+        )
+      `)
       .order('idusuario', { ascending: true });
 
     if (error) {
