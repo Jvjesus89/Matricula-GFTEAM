@@ -6,4 +6,14 @@ package = "@netlify/plugin-functions-install-core"
 
 # Configuração do cron job para verificar vencimentos
 [functions.verificarVencimentos]
-schedule = "@daily" # Executa uma vez por dia 
+schedule = "@daily" # Executa uma vez por dia
+
+# Configurações adicionais para funções
+[functions]
+  node_bundler = "esbuild"
+  external_node_modules = ["@supabase/supabase-js", "axios"]
+
+# Configurações de build
+[build.environment]
+  NETLIFY_USE_YARN = "true"
+  NODE_VERSION = "18" 
