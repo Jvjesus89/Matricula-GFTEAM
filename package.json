@@ -2,16 +2,20 @@
   "name": "gf-team",
   "version": "1.0.0",
   "description": "Sistema de Matrícula GFTEAM",
+  "main": "index.js",
   "scripts": {
-    "build": "npm install && echo 'Build completed'",
+    "build": "echo 'Build completed'",
     "dev": "netlify dev",
-    "postinstall": "npm run build"
+    "postinstall": "echo 'Dependencies installed'"
   },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
   "dependencies": {
     "@netlify/functions": "^2.0.0",
-    "@supabase/supabase-js": "^2.39.0",
-    "axios": "^1.6.0",
-    "qrcode": "^1.5.4"
+    "@supabase/supabase-js": "^2.39.3",
+    "axios": "^1.6.7",
+    "qrcode": "^1.5.3"
   },
   "engines": {
     "node": ">=18.0.0"
