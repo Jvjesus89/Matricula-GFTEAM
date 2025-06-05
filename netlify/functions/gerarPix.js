@@ -1,5 +1,6 @@
 const { createClient } = require('@supabase/supabase-js');
 const axios = require('axios');
+const QRCode = require('qrcode');
 
 // Configuração do Supabase
 const supabaseUrl = 'https://gwoicbguwvvyhgsjbaoz.supabase.co';
@@ -17,80 +18,6 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Content-Type': 'application/json'
 };
-
-async function gerarPix(pagamentoId, valor, descricao) {
-  try {
-    console.log('🔄 Iniciando geração do PIX para pagamento:', pagamentoId);
-    console.log('Valor recebido:', valor);
-    console.log('Descrição:', descricao);
-
-    // Converte o valor para número e garante que seja um valor válido
-    const valorNumerico = parseFloat(valor);
-    if (isNaN(valorNumerico) || valorNumerico <= 0) {
-      throw new Error('Valor inválido para o pagamento');
-    }
-
-    console.log('Valor convertido:', valorNumerico);
-
-    // Gera o QR Code no Mercado Pago
-    const response = await axios({
-      method: 'POST',
-      url: 'https://api.mercadopago.com/v1/payments',
-      headers: {
-        'Authorization': `Bearer ${MP_ACCESS_TOKEN}`,
-        'Content-Type': 'application/json',
-        'X-Idempotency-Key': `${pagamentoId}-${Date.now()}`
-      },
-      data: {
-        transaction_amount: Number(valorNumerico.toFixed(2)),
-        description: descricao,
-        payment_method_id: 'pix',
-        external_reference: pagamentoId.toString(),
-        notification_url: 'https://gf-team.netlify.app/.netlify/functions/webhookPix',
-        payer: {
-          email: 'cliente@exemplo.com',
-          first_name: 'Cliente',
-          last_name: 'Exemplo'
-        }
-      }
-    });
-
-    console.log('✅ QR Code gerado com sucesso:', response.data);
-
-    if (!response.data.point_of_interaction?.transaction_data?.qr_code) {
-      throw new Error('QR Code não encontrado na resposta do Mercado Pago');
-    }
-
-    // Atualiza o pagamento no Supabase com o ID do pagamento do Mercado Pago
-    const { error: updateError } = await supabase
-      .from('financeiro')
-      .update({ 
-        payment_id: response.data.id,
-        qr_code: response.data.point_of_interaction.transaction_data.qr_code,
-        qr_code_base64: response.data.point_of_interaction.transaction_data.qr_code_base64
-      })
-      .eq('idfinanceiro', pagamentoId);
-
-    if (updateError) {
-      console.error('❌ Erro ao atualizar pagamento:', updateError);
-      throw updateError;
-    }
-
-    return {
-      qr_code: response.data.point_of_interaction.transaction_data.qr_code,
-      qr_code_base64: response.data.point_of_interaction.transaction_data.qr_code_base64,
-      payment_id: response.data.id
-    };
-
-  } catch (error) {
-    console.error('❌ Erro ao gerar PIX:', error.response?.data || error.message);
-    if (error.response?.data?.error) {
-      console.error('Detalhes do erro:', error.response.data);
-      throw new Error(`Erro do Mercado Pago: ${error.response.data.error} - ${JSON.stringify(error.response.data)}`);
-    }
-    throw new Error(error.response?.data?.message || error.message || 'Erro ao gerar QR Code');
-  }
-}
 
 exports.handler = async function(event, context) {
   // Tratamento para requisições OPTIONS (preflight)
@@ -112,71 +39,176 @@ exports.handler = async function(event, context) {
   }
 
   try {
-    const { pagamentoId } = JSON.parse(event.body);
-
-    if (!pagamentoId) {
-      return {
-        statusCode: 400,
-        headers: corsHeaders,
-        body: JSON.stringify({ error: 'ID do pagamento é obrigatório' })
-      };
+    // Valida o corpo da requisição
+    if (!event.body) {
+      throw new Error('Corpo da requisição não fornecido');
     }
 
-    console.log('Buscando pagamento:', pagamentoId);
+    let body;
+    try {
+      body = JSON.parse(event.body);
+      console.log('📦 Corpo da requisição:', body);
+    } catch (e) {
+      throw new Error(`Erro ao parsear JSON: ${e.message}`);
+    }
+
+    if (!body.pagamentoId) {
+      throw new Error('ID do pagamento não fornecido');
+    }
+
+    const { pagamentoId } = body;
+    console.log('📥 Gerando QR Code para pagamento:', pagamentoId);
 
     // Busca os dados do pagamento
-    const { data: pagamento, error: fetchError } = await supabase
-      .from('financeiro')
-      .select(`
-        *,
-        usuarios (
-          nome
-        )
-      `)
-      .eq('idfinanceiro', pagamentoId)
-      .single();
+    let pagamento;
+    try {
+      console.log('🔍 Buscando dados do pagamento no Supabase...');
+      const { data, error: fetchError } = await supabase
+        .from('financeiro')
+        .select(`
+          *,
+          usuarios (
+            nome
+          )
+        `)
+        .eq('idfinanceiro', pagamentoId)
+        .single();
 
-    if (fetchError) {
-      console.error('Erro ao buscar pagamento:', fetchError);
-      return {
-        statusCode: 500,
-        headers: corsHeaders,
-        body: JSON.stringify({ error: 'Erro ao buscar pagamento', detalhe: fetchError.message })
-      };
+      if (fetchError) {
+        throw new Error(`Erro ao buscar pagamento: ${fetchError.message}`);
+      }
+
+      if (!data) {
+        throw new Error('Pagamento não encontrado');
+      }
+
+      // Validações adicionais do pagamento
+      if (!data.valor || data.valor <= 0) {
+        throw new Error('Valor do pagamento inválido ou não informado');
+      }
+
+      if (!data.usuarios?.nome) {
+        throw new Error('Nome do usuário não encontrado');
+      }
+
+      if (data.data_pagamento) {
+        throw new Error('Este pagamento já foi aprovado anteriormente');
+      }
+
+      if (data.payment_id) {
+        throw new Error('Este pagamento já possui um QR Code gerado');
+      }
+
+      pagamento = data;
+      console.log('✅ Pagamento encontrado e validado:', pagamento);
+    } catch (e) {
+      console.error('❌ Erro ao buscar/validar pagamento:', e);
+      throw new Error(`Erro ao buscar/validar pagamento: ${e.message}`);
     }
 
-    if (!pagamento) {
-      console.error('Pagamento não encontrado:', pagamentoId);
-      return {
-        statusCode: 404,
-        headers: corsHeaders,
-        body: JSON.stringify({ error: 'Pagamento não encontrado' })
-      };
+    // Valida o valor do pagamento
+    const valor = parseFloat(pagamento.valor);
+    if (isNaN(valor) || valor <= 0) {
+      throw new Error(`Valor inválido: ${pagamento.valor}`);
     }
 
-    console.log('Pagamento encontrado:', pagamento);
+    console.log('💰 Valor do pagamento:', valor);
 
-    // Gera o QR Code
-    const pixData = await gerarPix(
-      pagamento.idfinanceiro,
-      pagamento.valor,
-      `Pagamento de ${pagamento.usuarios.nome} - ${pagamento.descricao || 'Mensalidade'}`
-    );
+    // Gera o QR Code usando o Mercado Pago
+    let paymentData;
+    try {
+      console.log('🔄 Gerando pagamento no Mercado Pago...');
+      const mpPayload = {
+        transaction_amount: valor,
+        description: `Pagamento GFTEAM - ${pagamento.usuarios.nome}`,
+        payment_method_id: 'pix',
+        payer: {
+          email: 'cliente@email.com',
+          first_name: pagamento.usuarios.nome.split(' ')[0],
+          last_name: pagamento.usuarios.nome.split(' ').slice(1).join(' ')
+        },
+        external_reference: pagamentoId.toString()
+      };
 
+      console.log('📤 Payload para Mercado Pago:', mpPayload);
+
+      const response = await axios.post(
+        'https://api.mercadopago.com/v1/payments',
+        mpPayload,
+        {
+          headers: {
+            'Authorization': `Bearer ${MP_ACCESS_TOKEN}`,
+            'Content-Type': 'application/json',
+            'X-Idempotency-Key': `${pagamentoId}-${Date.now()}`
+          }
+        }
+      );
+
+      paymentData = response.data;
+      console.log('📦 Resposta do Mercado Pago:', paymentData);
+
+      if (!paymentData.point_of_interaction?.transaction_data?.qr_code) {
+        throw new Error('QR Code não encontrado na resposta do Mercado Pago');
+      }
+    } catch (e) {
+      console.error('❌ Erro ao gerar pagamento no Mercado Pago:', e.response?.data || e.message);
+      throw new Error(`Erro ao gerar pagamento no Mercado Pago: ${e.response?.data?.message || e.message}`);
+    }
+
+    // Gera o QR Code em base64
+    let qrCodeBase64;
+    try {
+      console.log('🔄 Gerando QR Code em base64...');
+      // Usa o código PIX direto do Mercado Pago
+      qrCodeBase64 = await QRCode.toDataURL(paymentData.point_of_interaction.transaction_data.qr_code);
+      console.log('✅ QR Code gerado com sucesso');
+    } catch (e) {
+      console.error('❌ Erro ao gerar QR Code em base64:', e);
+      throw new Error(`Erro ao gerar QR Code em base64: ${e.message}`);
+    }
+
+    // Atualiza o registro com o ID do pagamento
+    try {
+      console.log('🔄 Atualizando registro no Supabase...');
+      const { error: updateError } = await supabase
+        .from('financeiro')
+        .update({ 
+          payment_id: paymentData.id
+        })
+        .eq('idfinanceiro', pagamentoId);
+
+      if (updateError) {
+        throw new Error(`Erro ao atualizar pagamento: ${updateError.message}`);
+      }
+
+      console.log('✅ Registro atualizado com sucesso');
+    } catch (e) {
+      console.error('❌ Erro ao atualizar registro:', e);
+      throw new Error(`Erro ao atualizar registro: ${e.message}`);
+    }
+
+    // Retorna os dados do QR Code
     return {
       statusCode: 200,
       headers: corsHeaders,
-      body: JSON.stringify(pixData)
+      body: JSON.stringify({
+        qr_code: paymentData.point_of_interaction.transaction_data.qr_code,
+        qr_code_base64: qrCodeBase64.split(',')[1],
+        payment_id: paymentData.id
+      })
     };
 
   } catch (error) {
-    console.error('❌ Erro na função:', error);
+    console.error('❌ Erro detalhado:', error);
+    console.error('❌ Stack trace:', error.stack);
+    
     return {
       statusCode: 500,
       headers: corsHeaders,
       body: JSON.stringify({ 
         error: 'Erro ao gerar QR Code',
-        detalhe: error.message 
+        detalhe: error.message || 'Erro desconhecido',
+        stack: error.stack
       })
     };
   }

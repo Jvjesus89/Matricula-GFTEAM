@@ -510,7 +510,8 @@ $(document).ready(function() {
 
           console.log('📊 Dados do pagamento:', pagamento);
 
-          if (pagamento && pagamento.data_pagamento) {
+          // Verifica se o pagamento tem payment_id E data_pagamento
+          if (pagamento && pagamento.payment_id && pagamento.data_pagamento) {
             console.log('✅ Pagamento aprovado!');
             
             // Fecha o modal do QR Code

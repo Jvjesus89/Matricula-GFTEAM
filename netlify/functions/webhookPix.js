@@ -40,8 +40,21 @@ exports.handler = async function(event, context) {
     if (data.action === 'payment.updated' || data.action === 'payment.approved') {
       const paymentId = data.data.id;
       const status = data.data.status;
+      const paymentStatus = data.data.status_detail;
 
-      console.log(`🔄 Atualizando pagamento ${paymentId} para status: ${status}`);
+      console.log(`🔄 Verificando pagamento ${paymentId}`);
+      console.log(`📊 Status: ${status}`);
+      console.log(`📋 Detalhes: ${paymentStatus}`);
+
+      // Verifica se o pagamento foi realmente aprovado
+      if (status !== 'approved' || paymentStatus !== 'accredited') {
+        console.log('❌ Pagamento não aprovado:', { status, paymentStatus });
+        return {
+          statusCode: 200,
+          headers: corsHeaders,
+          body: JSON.stringify({ message: 'Pagamento não aprovado' })
+        };
+      }
 
       // Busca o pagamento pelo ID do Mercado Pago
       const { data: pagamento, error: fetchError } = await supabase
@@ -62,8 +75,8 @@ exports.handler = async function(event, context) {
 
       console.log('📦 Pagamento encontrado:', pagamento);
 
-      // Se o pagamento foi aprovado, atualiza apenas o payment_id
-      if (status === 'approved') {
+      // Atualiza apenas se o pagamento não tiver sido processado antes
+      if (!pagamento.data_pagamento) {
         const { data: updateData, error: updateError } = await supabase
           .from('financeiro')
           .update({ 
@@ -79,6 +92,8 @@ exports.handler = async function(event, context) {
         }
 
         console.log('✅ Pagamento atualizado com sucesso:', updateData);
+      } else {
+        console.log('ℹ️ Pagamento já processado anteriormente');
       }
 
       return {
