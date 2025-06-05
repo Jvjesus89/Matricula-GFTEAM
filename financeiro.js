@@ -96,8 +96,11 @@ $(document).ready(function() {
           if (row.data_pagamento) {
             botoes += `<button onclick="imprimirComprovante(${row.idfinanceiro})" class="btn btn-success btn-sm" style="margin-right: 5px;" title="Imprimir Comprovante">🖨️</button>`;
           } else {
-            // Mostra o botão de WhatsApp se não tiver data de pagamento
-            botoes += `<button onclick="enviarWhatsApp(${row.idfinanceiro})" class="btn btn-success btn-sm" style="margin-right: 5px;" title="Enviar WhatsApp">📱</button>`;
+            // Mostra os botões de WhatsApp (apenas para admin) e PIX se não tiver data de pagamento
+            if (isAdmin) {
+              botoes += `<button onclick="enviarWhatsApp(${row.idfinanceiro})" class="btn btn-success btn-sm" style="margin-right: 5px;" title="Enviar WhatsApp">📱</button>`;
+            }
+            botoes += `<button onclick="gerarPix(${row.idfinanceiro})" class="btn btn-info btn-sm" style="margin-right: 5px;" title="Gerar PIX">💸</button>`;
           }
 
           // Adiciona os botões de editar e excluir apenas se for administrador
@@ -393,11 +396,30 @@ $(document).ready(function() {
       // Formata o telefone (remove caracteres não numéricos e adiciona o código do país)
       const telefoneFormatado = '55' + registro.telefone.replace(/\D/g, '');
 
+      // Gera o QR Code primeiro
+      const responsePix = await fetch('/.netlify/functions/gerarPix', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ pagamentoId: idfinanceiro })
+      });
+
+      if (!responsePix.ok) {
+        throw new Error('Erro ao gerar QR Code');
+      }
+
+      const pixData = await responsePix.json();
+
+      // Cria a URL do QR Code
+      const qrCodeUrl = `https://gf-team.netlify.app/.netlify/functions/gerarPix?id=${idfinanceiro}`;
+
       console.log('Enviando dados:', {
         telefone: telefoneFormatado,
         usuario: registro.usuario,
         valor: `R$ ${parseFloat(registro.valor).toFixed(2)}`,
-        dataVencimento: dataVencimento
+        dataVencimento: dataVencimento,
+        qrCodeUrl: qrCodeUrl
       });
 
       const responseWhatsApp = await fetch('/.netlify/functions/enviarWhatsApp', {
@@ -409,7 +431,8 @@ $(document).ready(function() {
           telefone: telefoneFormatado,
           usuario: registro.usuario,
           valor: `R$ ${parseFloat(registro.valor).toFixed(2)}`,
-          dataVencimento: dataVencimento
+          dataVencimento: dataVencimento,
+          qrCodeUrl: qrCodeUrl
         })
       });
 
@@ -423,6 +446,60 @@ $(document).ready(function() {
     } catch (error) {
       console.error('Erro detalhado:', error);
       alert('Erro ao enviar mensagem: ' + (error.message || 'Erro desconhecido'));
+    }
+  };
+
+  // Adiciona a função para gerar o QR Code PIX
+  window.gerarPix = async function(idfinanceiro) {
+    try {
+      // Mostra um modal de carregamento
+      const modal = document.createElement('div');
+      modal.className = 'modal';
+      modal.style.display = 'block';
+      modal.innerHTML = `
+        <div class="modal-content" style="max-width: 400px;">
+          <span class="close" onclick="this.parentElement.parentElement.remove()">&times;</span>
+          <h3>Gerando QR Code PIX</h3>
+          <div id="qrCodeContainer" style="text-align: center; margin: 20px 0;">
+            <div class="spinner-border" role="status">
+              <span class="sr-only">Carregando...</span>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+
+      // Faz a requisição para gerar o QR Code
+      const response = await fetch('/.netlify/functions/gerarPix', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ pagamentoId: idfinanceiro })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erro ao gerar QR Code');
+      }
+
+      const data = await response.json();
+
+      // Atualiza o modal com o QR Code
+      const qrCodeContainer = document.getElementById('qrCodeContainer');
+      qrCodeContainer.innerHTML = `
+        <img src="data:image/png;base64,${data.qr_code_base64}" alt="QR Code PIX" style="max-width: 200px;">
+        <p style="margin-top: 10px; word-break: break-all;">${data.qr_code}</p>
+        <p style="margin-top: 10px; color: #666;">Escaneie o QR Code ou copie o código PIX acima</p>
+        <button onclick="navigator.clipboard.writeText('${data.qr_code}')" class="btn btn-primary btn-sm" style="margin-top: 10px;">
+          Copiar código PIX
+        </button>
+      `;
+
+    } catch (error) {
+      console.error('Erro ao gerar QR Code:', error);
+      alert('Erro ao gerar QR Code: ' + error.message);
+      modal.remove();
     }
   };
 

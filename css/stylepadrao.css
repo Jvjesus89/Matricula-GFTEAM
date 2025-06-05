@@ -73,25 +73,23 @@ table.dataTable {
 
 /*Cadastro aluno*/
 .modal {
-  display: none; /* Inicialmente oculto */
-  position: fixed; /* Fixa na tela */
-  z-index: 1; /* Sobrepor outros elementos */
+  display: none;
+  position: fixed;
+  z-index: 1000;
   left: 0;
   top: 0;
   width: 100%;
   height: 100%;
-  overflow: auto; /* Permite rolagem se o conteúdo for muito grande */
-  background-color: rgba(0,0,0,0.4); /* Fundo escurecido */
+  background-color: rgba(0,0,0,0.5);
 }
 
 .modal-content {
   background-color: #fefefe;
-  margin: 5% auto;
+  margin: 15% auto;
   padding: 20px;
   border: 1px solid #888;
-  width: 90%;
-  max-width: 400px;
-  border-radius: 8px;
+  border-radius: 5px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
 
 .close {
@@ -99,6 +97,7 @@ table.dataTable {
   float: right;
   font-size: 28px;
   font-weight: bold;
+  cursor: pointer;
 }
 
 .close:hover,
@@ -106,6 +105,38 @@ table.dataTable {
   color: black;
   text-decoration: none;
   cursor: pointer;
+}
+
+#qrCodeContainer {
+  text-align: center;
+  padding: 20px;
+}
+
+#qrCodeContainer img {
+  max-width: 200px;
+  margin-bottom: 15px;
+}
+
+#qrCodeContainer p {
+  margin: 10px 0;
+  word-break: break-all;
+  font-size: 14px;
+  color: #666;
+}
+
+.spinner-border {
+  display: inline-block;
+  width: 2rem;
+  height: 2rem;
+  vertical-align: text-bottom;
+  border: 0.25em solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spinner-border .75s linear infinite;
+}
+
+@keyframes spinner-border {
+  to { transform: rotate(360deg); }
 }
 
 .container-Cadastro {
@@ -317,8 +348,8 @@ table.dataTable thead th {
 
 /* Estilo específico para a coluna de ações */
 table.dataTable .coluna-acoes {
-  min-width: 120px;
-  width: 120px;
+  min-width: 200px;
+  width: 200px;
 }
 
 /* Estilo específico para a coluna de valor */
@@ -330,14 +361,16 @@ table.dataTable .coluna-valor {
 
 .btn-group {
   display: flex;
-  gap: 5px;
+  gap: 8px;
   justify-content: center;
   align-items: center;
+  flex-wrap: nowrap;
 }
 
 .btn-group button {
-  padding: 4px 8px;
-  line-height: 1;
+  padding: 6px 10px;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
 .dt-center {
@@ -487,12 +520,12 @@ table.dataTable .coluna-valor {
 
   .btn-group {
     flex-wrap: wrap;
-    gap: 3px;
+    gap: 4px;
   }
 
   .btn-group button {
-    padding: 3px 6px;
-    font-size: 12px;
+    padding: 4px 8px;
+    font-size: 14px;
   }
 
   /* Ajuste para o modal em dispositivos móveis */
@@ -517,6 +550,11 @@ table.dataTable .coluna-valor {
     width: 100%;
     padding: 0;
     margin-bottom: 20px;
+  }
+
+  table.dataTable .coluna-acoes {
+    min-width: 180px;
+    width: 180px;
   }
 }
 

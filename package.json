@@ -3,13 +3,15 @@
   "version": "1.0.0",
   "description": "Sistema de Matrícula GFTEAM",
   "scripts": {
-    "build": "echo 'Build completed'",
-    "dev": "netlify dev"
+    "build": "npm install && echo 'Build completed'",
+    "dev": "netlify dev",
+    "postinstall": "npm run build"
   },
   "dependencies": {
     "@netlify/functions": "^2.0.0",
     "@supabase/supabase-js": "^2.39.0",
-    "axios": "^1.6.0"
+    "axios": "^1.6.0",
+    "qrcode": "^1.5.4"
   },
   "engines": {
     "node": ">=18.0.0"
