@@ -81,7 +81,8 @@ async function verificarVencimentos() {
     
     try {
       const hoje = new Date();
-      const dataLimite = new Date();
+      hoje.setHours(0, 0, 0, 0); // Zera as horas para comparar apenas datas
+      const dataLimite = new Date(hoje);
       dataLimite.setDate(hoje.getDate() + 5);
   
       console.log('📅 Período de verificação:', {
@@ -109,6 +110,11 @@ async function verificarVencimentos() {
         return { error: 'Erro ao buscar pagamentos', detalhe: error.message };
       }
   
+      console.log('📊 Resultado da busca:', {
+        total: pagamentos?.length || 0,
+        pagamentos: pagamentos
+      });
+
       if (!pagamentos || pagamentos.length === 0) {
         console.log('ℹ️ Nenhum pagamento encontrado para notificar.');
         return { message: 'Nenhum pagamento encontrado para notificar.' };
