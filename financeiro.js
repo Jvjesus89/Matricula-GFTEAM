@@ -451,9 +451,10 @@ $(document).ready(function() {
 
   // Adiciona a função para gerar o QR Code PIX
   window.gerarPix = async function(idfinanceiro) {
+    let modal;
     try {
       // Mostra um modal de carregamento
-      const modal = document.createElement('div');
+      modal = document.createElement('div');
       modal.className = 'modal';
       modal.style.display = 'block';
       modal.innerHTML = `
@@ -478,12 +479,15 @@ $(document).ready(function() {
         body: JSON.stringify({ pagamentoId: idfinanceiro })
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Erro ao gerar QR Code');
+        throw new Error(data.error || data.detalhe || 'Erro ao gerar QR Code');
       }
 
-      const data = await response.json();
+      if (!data.qr_code || !data.qr_code_base64) {
+        throw new Error('Dados do QR Code inválidos');
+      }
 
       // Atualiza o modal com o QR Code
       const qrCodeContainer = document.getElementById('qrCodeContainer');
@@ -496,10 +500,81 @@ $(document).ready(function() {
         </button>
       `;
 
+      // Função para verificar o status do pagamento
+      const verificarPagamento = async () => {
+        try {
+          console.log('🔍 Verificando pagamento ID:', idfinanceiro);
+          const response = await fetch(`/.netlify/functions/obterFinanceiro?idfinanceiro=${idfinanceiro}`);
+          const data = await response.json();
+          const pagamento = data.find(f => f.idfinanceiro === idfinanceiro);
+
+          console.log('📊 Dados do pagamento:', pagamento);
+
+          if (pagamento && pagamento.data_pagamento) {
+            console.log('✅ Pagamento aprovado!');
+            
+            // Fecha o modal do QR Code
+            if (modal) {
+              modal.remove();
+            }
+
+            // Mostra mensagem de pagamento aprovado
+            const mensagemModal = document.createElement('div');
+            mensagemModal.className = 'modal';
+            mensagemModal.style.display = 'block';
+            mensagemModal.innerHTML = `
+              <div class="modal-content" style="max-width: 400px; text-align: center; padding: 20px;">
+                <h3 style="color: #28a745; margin-bottom: 15px;">✅ Pagamento Aprovado!</h3>
+                <p style="margin-bottom: 10px;">O pagamento foi processado com sucesso.</p>
+                <p style="color: #666; font-size: 0.9em;">Esta mensagem será fechada automaticamente.</p>
+              </div>
+            `;
+            document.body.appendChild(mensagemModal);
+
+            // Atualiza a tabela imediatamente
+            console.log('🔄 Atualizando tabela...');
+            await window.carregarFinanceiro();
+            console.log('✅ Tabela atualizada');
+
+            // Remove a mensagem após 3 segundos
+            setTimeout(() => {
+              mensagemModal.remove();
+            }, 3000);
+
+            return true;
+          }
+          return false;
+        } catch (error) {
+          console.error('❌ Erro ao verificar pagamento:', error);
+          return false;
+        }
+      };
+
+      // Verifica o pagamento a cada 2 segundos
+      const intervalo = setInterval(async () => {
+        console.log('⏰ Verificando status do pagamento...');
+        const pagamentoAprovado = await verificarPagamento();
+        if (pagamentoAprovado) {
+          console.log('🛑 Parando verificação - pagamento aprovado');
+          clearInterval(intervalo);
+        }
+      }, 2000);
+
+      // Limpa o intervalo quando o modal for fechado
+      modal.querySelector('.close').addEventListener('click', () => {
+        console.log('❌ Modal fechado - parando verificação');
+        clearInterval(intervalo);
+      });
+
+      // Adiciona verificação inicial
+      verificarPagamento();
+
     } catch (error) {
       console.error('Erro ao gerar QR Code:', error);
+      if (modal) {
+        modal.remove();
+      }
       alert('Erro ao gerar QR Code: ' + error.message);
-      modal.remove();
     }
   };
 
