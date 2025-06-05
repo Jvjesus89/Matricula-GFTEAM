@@ -5,6 +5,14 @@ const supabaseUrl = 'https://gwoicbguwvvyhgsjbaoz.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3b2ljYmd1d3Z2eWhnc2piYW96Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU5NTkwNzEsImV4cCI6MjA2MTUzNTA3MX0.nUGfOLsdVbHpYGqs0uX3I8IVI6ZLxZoDatPrkWwpL9A';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+// Headers padrão para CORS
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Allow-Methods': 'GET, OPTIONS',
+  'Content-Type': 'application/json'
+};
+
 // Configuração do WhatsApp Business API
 const WHATSAPP_TOKEN = 'EAATjiH8My38BO7M7rAOZCw4ISLbA6ZA2VZBjEyhOCfHcLir8oYm8BdbaZCmdn1Eiq1Gtc9SBqGbbgnNoMW7YKy2gKZB00Lrovnbe0J5TpFygKJmoZC444Hv4nObFNM3C6fB8xdYhsNV8KyaLEZBkJICxbKzRQQ5xRRcB5O1ZAWBAuKfg5OqHvLWzpyZB1Gvqqo94WgZDZD';
 const WHATSAPP_PHONE_NUMBER_ID = '624266544111694';
@@ -58,8 +66,8 @@ async function enviarMensagemWhatsApp(telefone, dados) {
       return { sucesso: false, erro: erroDetalhe };
     }
 }
-  
-exports.handler = async function(event, context) {
+
+async function verificarVencimentos() {
     try {
       const hoje = new Date();
       const dataLimite = new Date();
@@ -81,12 +89,20 @@ exports.handler = async function(event, context) {
   
       if (error) {
         console.error('Erro ao buscar pagamentos:', error);
-        return;
+        return {
+          statusCode: 500,
+          headers: corsHeaders,
+          body: JSON.stringify({ error: 'Erro ao buscar pagamentos', detalhe: error.message })
+        };
       }
   
       if (!pagamentos || pagamentos.length === 0) {
         console.log('Nenhum pagamento encontrado para notificar.');
-        return;
+        return {
+          statusCode: 200,
+          headers: corsHeaders,
+          body: JSON.stringify({ message: 'Nenhum pagamento encontrado para notificar.' })
+        };
       }
   
       console.log(`🔎 ${pagamentos.length} pagamentos encontrados.`);
@@ -130,14 +146,61 @@ exports.handler = async function(event, context) {
       const totalEnviados = resultados.filter(r => r.status === 'Enviado').length;
       const totalFalhas = resultados.filter(r => r.status === 'Falhou').length;
   
-      console.log('📊 Resumo da execução:', {
+      const response = {
+        message: 'Verificação de vencimentos concluída',
         total_pagamentos: pagamentos.length,
         total_enviados: totalEnviados,
         total_falhas: totalFalhas,
         resultados
-      });
+      };
+
+      console.log('📊 Resumo da execução:', response);
+      
+      return {
+        statusCode: 200,
+        headers: corsHeaders,
+        body: JSON.stringify(response)
+      };
   
     } catch (error) {
       console.error('❌ Erro geral na função:', error);
+      return {
+        statusCode: 500,
+        headers: corsHeaders,
+        body: JSON.stringify({ 
+          error: 'Erro ao processar verificação de vencimentos', 
+          detalhe: error.message,
+          stack: error.stack
+        })
+      };
     }
+}
+  
+exports.handler = async function(event, context) {
+    // Tratamento para requisições OPTIONS (preflight)
+    if (event.httpMethod === 'OPTIONS') {
+      return {
+        statusCode: 200,
+        headers: corsHeaders,
+        body: ''
+      };
+    }
+
+    // Verifica se o método é GET
+    if (event.httpMethod !== 'GET') {
+      return {
+        statusCode: 405,
+        headers: corsHeaders,
+        body: JSON.stringify({ error: 'Método não permitido' })
+      };
+    }
+
+    // Se for uma chamada agendada (sem event.httpMethod)
+    if (!event.httpMethod) {
+      await verificarVencimentos();
+      return;
+    }
+
+    // Se for uma chamada HTTP normal
+    return await verificarVencimentos();
 };
