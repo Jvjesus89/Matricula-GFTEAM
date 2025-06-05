@@ -3,8 +3,9 @@
   "version": "1.0.0",
   "description": "Sistema de Matrícula GFTEAM",
   "scripts": {
-    "build": "echo 'Build completed'",
-    "dev": "netlify dev"
+    "build": "npm install && echo 'Build completed'",
+    "dev": "netlify dev",
+    "postinstall": "npm run build"
   },
   "dependencies": {
     "@netlify/functions": "^2.0.0",
