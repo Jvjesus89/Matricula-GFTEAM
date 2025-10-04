@@ -34,19 +34,19 @@ main {
 
 /*Consulta aluno*/ 
 .container-ConsultaAluno {
-    width: 100%;
-    max-width: 1000px;
-    min-height: 600px;
-    height: auto;
-    padding: 30px;
-    margin: 50px auto;
-    border-radius: 5px;
-    border: 2px solid #eeededcc;
-    justify-content: center;
-    align-items: center;
-    font-size: 20px;
-    background-color: rgb(247, 247, 247);
-    box-sizing: border-box;
+    width: 95%; /* Ocupa 95% da tela, deixando uma pequena margem */
+    max-width: 1200px; /* Limita a largura máxima em monitores grandes */
+    margin: 30px auto; /* Centraliza o contêiner na página */
+    padding: 20px;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+
+    /* Essencial para organizar os itens internos */
+    display: flex;
+    flex-direction: column; /* Empilha os itens verticalmente */
+    gap: 25px; /* Cria um espaço de 25px entre o topo, a tabela e a paginação */
 }
 
 .container-ConsultaAluno .dataTables_wrapper {
@@ -81,15 +81,20 @@ table.dataTable {
   width: 100%;
   height: 100%;
   background-color: rgba(0,0,0,0.5);
+  animation: fadeIn 0.3s ease-in-out;
+  box-sizing: border-box;
 }
 
 .modal-content {
   background-color: #fefefe;
-  margin: 15% auto;
+  margin: 2% auto;
   padding: 20px;
   border: 1px solid #888;
   border-radius: 5px;
   box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  max-width: 600px; 
+  max-height: 90vh; 
+  overflow-y: auto;
 }
 
 .close {
@@ -458,11 +463,15 @@ table.dataTable .coluna-valor {
 
 /* Ajustes responsivos para dispositivos móveis */
 @media screen and (max-width: 768px) {
+   .dataTables_wrapper {
+    overflow-x: auto;
+    }
   .container-ConsultaAluno {
     width: 100%;
     padding: 10px;
     margin: 10px 0;
     min-height: auto;
+    box-sizing: border-box;
   }
 
   .container-ConsultaAluno .filtro-data .row {

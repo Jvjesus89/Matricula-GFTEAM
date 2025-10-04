@@ -3,13 +3,13 @@ const axios = require('axios');
 const QRCode = require('qrcode');
 
 // Configuração do Supabase
-const supabaseUrl = 'https://gwoicbguwvvyhgsjbaoz.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3b2ljYmd1d3Z2eWhnc2piYW96Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU5NTkwNzEsImV4cCI6MjA2MTUzNTA3MX0.nUGfOLsdVbHpYGqs0uX3I8IVI6ZLxZoDatPrkWwpL9A';
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Configuração do Mercado Pago
-const MP_ACCESS_TOKEN = 'APP_USR-2355140035774994-060516-86fdf8b10b4b5369005b6283a478fac9-527576692';
-const MP_PUBLIC_KEY = 'APP_USR-6bbd29ce-18de-4778-9d1b-8abbb76e5f30';
+const MP_ACCESS_TOKEN = process.env.MP_ACCESS_TOKEN;
+const MP_PUBLIC_KEY = process.env.MP_PUBLIC_KEY;
 
 // Headers padrão para CORS
 const corsHeaders = {

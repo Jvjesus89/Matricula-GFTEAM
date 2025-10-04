@@ -73,6 +73,7 @@ async function handleFormSubmit(event) {
   const form = document.getElementById('form-aluno');
   const formData = {
     usuario: form.querySelector('input[name="usuario"]').value,
+    Responsavel: form.querySelector('input[name="Responsavel"]').value,
     nome: form.querySelector('input[name="NomeAluno"]').value,
     idade: parseInt(form.querySelector('input[name="Idade"]').value),
     telefone: form.querySelector('input[name="Telefone"]').value,
@@ -132,6 +133,7 @@ async function carregarUsuarios() {
       window.tabelaUsuarios.row.add([
         usuario.idusuario,
         usuario.usuario,
+        usuario.responsavel,
         usuario.nome,
         usuario.idade,
         usuario.telefone,

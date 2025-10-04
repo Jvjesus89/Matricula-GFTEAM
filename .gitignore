@@ -70,3 +70,6 @@ node_modules/
 
 # Local Netlify folder
 .netlify
+
+# Ignorar arquivos de variáveis de ambiente locais
+.env
