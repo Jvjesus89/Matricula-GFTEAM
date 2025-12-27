@@ -9,8 +9,20 @@ Se você está recebendo erro 500 ao tentar fazer login, verifique:
 As funções Netlify precisam das variáveis de ambiente do Supabase. Crie um arquivo `.env` na raiz do projeto:
 
 ```env
-SUPABASE_URL=sua_url_do_supabase
-SUPABASE_ANON_KEY=sua_chave_anonima
+SUPABASE_URL=https://seu-projeto.supabase.co
+SUPABASE_ANON_KEY=sua_chave_anonima_aqui
+```
+
+**IMPORTANTE:**
+- A `SUPABASE_URL` **DEVE** começar com `https://`
+- Não use `http://` - isso causará erros de "fetch failed"
+- Você pode encontrar essas informações no painel do Supabase em Settings > API
+
+**Para desenvolvimento local com Netlify Dev:**
+Crie um arquivo `.env` na raiz do projeto ou configure as variáveis usando:
+```bash
+netlify env:set SUPABASE_URL https://seu-projeto.supabase.co
+netlify env:set SUPABASE_ANON_KEY sua_chave_anonima
 ```
 
 ### 2. Netlify Dev

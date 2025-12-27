@@ -21,6 +21,13 @@ package = "@netlify/plugin-functions-install-core"
 [functions.verificarVencimentos]
 schedule = "0 12 * * *" # Executa todos os dias às 12:00 UTC (09:00 BRT)
 
+# Configuração do cron job para processar lançamentos mensais
+# Executa no dia 01 às 10:00 UTC (07:00 BRT) e também nos dias 02-05 às 08:00 UTC (05:00 BRT) como backup
+[functions.processarLancamentosMensais]
+schedule = "0 10 1 * *" # Executa no dia 01 de cada mês às 10:00 UTC (07:00 BRT)
+# Backup: executa nos dias 02-05 caso tenha falhado no dia 01
+# Nota: A função já verifica se os lançamentos já existem, então é seguro executar múltiplas vezes
+
 # Configurações adicionais para funções
 [functions]
   node_bundler = "esbuild"

@@ -5,9 +5,26 @@ const supabaseKey = process.env.SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
   console.error('Variáveis de ambiente SUPABASE_URL e SUPABASE_ANON_KEY não configuradas!');
+  console.error('SUPABASE_URL:', supabaseUrl ? 'Configurada' : 'NÃO CONFIGURADA');
+  console.error('SUPABASE_ANON_KEY:', supabaseKey ? 'Configurada' : 'NÃO CONFIGURADA');
 }
 
-const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
+// Validação da URL do Supabase
+let supabase = null;
+if (supabaseUrl && supabaseKey) {
+  // Garante que a URL começa com https://
+  const url = supabaseUrl.trim();
+  if (!url.startsWith('https://')) {
+    console.error('ERRO: SUPABASE_URL deve começar com https://. URL atual:', url);
+  } else {
+    try {
+      supabase = createClient(url, supabaseKey);
+      console.log('Cliente Supabase inicializado com sucesso. URL:', url.substring(0, 30) + '...');
+    } catch (error) {
+      console.error('Erro ao criar cliente Supabase:', error);
+    }
+  }
+}
 
 exports.handler = async function(event, context) {
   // CORS headers
@@ -67,21 +84,51 @@ exports.handler = async function(event, context) {
 
   try {
     // 1. Primeiro tenta buscar em usuarios (alunos)
-    const { data: usuarioData, error: usuarioError } = await supabase
-      .from('usuarios')
-      .select(`
-        *,
-        usuario_perfil (
-          perfil,
-          isadministrador
-        )
-      `)
-      .eq('usuario', nomeUsuario)
-      .eq('senha', senha)
-      .maybeSingle();
+    let usuarioData = null;
+    let usuarioError = null;
+    
+    try {
+      const result = await supabase
+        .from('usuarios')
+        .select(`
+          *,
+          usuario_perfil (
+            perfil,
+            isadministrador
+          )
+        `)
+        .eq('usuario', nomeUsuario)
+        .eq('senha', senha)
+        .maybeSingle();
+      
+      usuarioData = result.data;
+      usuarioError = result.error;
+    } catch (fetchError) {
+      console.error('Erro de rede ao buscar em usuarios:', {
+        message: fetchError.message,
+        details: fetchError.details || fetchError.toString(),
+        code: fetchError.code
+      });
+      usuarioError = {
+        message: 'Erro de conexão com o banco de dados',
+        details: fetchError.message,
+        code: 'FETCH_ERROR'
+      };
+    }
 
     if (usuarioError) {
       console.error('Erro ao buscar em usuarios:', usuarioError);
+      // Se for erro de rede, não continua tentando responsáveis
+      if (usuarioError.code === 'FETCH_ERROR' || usuarioError.message?.includes('fetch failed')) {
+        return {
+          statusCode: 500,
+          headers,
+          body: JSON.stringify({ 
+            error: 'Erro de conexão com o banco de dados. Verifique as configurações do Supabase.',
+            details: usuarioError.details || usuarioError.message
+          }),
+        };
+      }
     }
 
     // Se encontrou em usuarios, retorna como aluno
@@ -99,41 +146,81 @@ exports.handler = async function(event, context) {
 
     // 2. Se não encontrou em usuarios, tenta buscar em responsaveis
     // Primeiro tenta com relacionamento usuario_perfil
-    let responsavelData = null
-    let responsavelError = null
+    let responsavelData = null;
+    let responsavelError = null;
     
-    const { data: responsavelDataWithRel, error: responsavelErrorWithRel } = await supabase
-      .from('responsaveis')
-      .select(`
-        *,
-        usuario_perfil (
-          perfil,
-          isadministrador
-        )
-      `)
-      .eq('usuario', nomeUsuario)
-      .eq('senha', senha)
-      .maybeSingle()
-    
-    // Se deu erro relacionado ao relacionamento, tenta sem relacionamento
-    if (responsavelErrorWithRel && responsavelErrorWithRel.code !== 'PGRST116') {
-      console.log('Tentando buscar responsável sem relacionamento...')
-      const { data: responsavelDataSimple, error: responsavelErrorSimple } = await supabase
+    try {
+      const resultWithRel = await supabase
         .from('responsaveis')
-        .select('*')
+        .select(`
+          *,
+          usuario_perfil (
+            perfil,
+            isadministrador
+          )
+        `)
         .eq('usuario', nomeUsuario)
         .eq('senha', senha)
-        .maybeSingle()
+        .maybeSingle();
       
-      responsavelData = responsavelDataSimple
-      responsavelError = responsavelErrorSimple
-    } else {
-      responsavelData = responsavelDataWithRel
-      responsavelError = responsavelErrorWithRel
+      const responsavelDataWithRel = resultWithRel.data;
+      const responsavelErrorWithRel = resultWithRel.error;
+      
+      // Se deu erro relacionado ao relacionamento, tenta sem relacionamento
+      if (responsavelErrorWithRel && responsavelErrorWithRel.code !== 'PGRST116') {
+        console.log('Tentando buscar responsável sem relacionamento...');
+        try {
+          const resultSimple = await supabase
+            .from('responsaveis')
+            .select('*')
+            .eq('usuario', nomeUsuario)
+            .eq('senha', senha)
+            .maybeSingle();
+          
+          responsavelData = resultSimple.data;
+          responsavelError = resultSimple.error;
+        } catch (fetchError) {
+          console.error('Erro de rede ao buscar responsável sem relacionamento:', {
+            message: fetchError.message,
+            details: fetchError.details || fetchError.toString(),
+            code: fetchError.code
+          });
+          responsavelError = {
+            message: 'Erro de conexão com o banco de dados',
+            details: fetchError.message,
+            code: 'FETCH_ERROR'
+          };
+        }
+      } else {
+        responsavelData = responsavelDataWithRel;
+        responsavelError = responsavelErrorWithRel;
+      }
+    } catch (fetchError) {
+      console.error('Erro de rede ao buscar em responsaveis:', {
+        message: fetchError.message,
+        details: fetchError.details || fetchError.toString(),
+        code: fetchError.code
+      });
+      responsavelError = {
+        message: 'Erro de conexão com o banco de dados',
+        details: fetchError.message,
+        code: 'FETCH_ERROR'
+      };
     }
 
     if (responsavelError && responsavelError.code !== 'PGRST116') {
       console.error('Erro ao buscar em responsaveis:', responsavelError);
+      // Se for erro de rede, retorna erro 500
+      if (responsavelError.code === 'FETCH_ERROR' || responsavelError.message?.includes('fetch failed')) {
+        return {
+          statusCode: 500,
+          headers,
+          body: JSON.stringify({ 
+            error: 'Erro de conexão com o banco de dados. Verifique as configurações do Supabase.',
+            details: responsavelError.details || responsavelError.message
+          }),
+        };
+      }
     }
 
     // Se encontrou em responsaveis, busca os alunos vinculados
@@ -177,7 +264,26 @@ exports.handler = async function(event, context) {
       body: JSON.stringify({ error: 'Usuário ou senha inválidos.' }),
     };
   } catch (err) {
-    console.error('Erro na função usuarios:', err);
+    console.error('Erro na função usuarios:', {
+      message: err.message,
+      details: err.details || err.toString(),
+      stack: err.stack,
+      code: err.code
+    });
+    
+    // Tratamento específico para erros de fetch/rede
+    if (err.message?.includes('fetch failed') || err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND') {
+      return {
+        statusCode: 500,
+        headers,
+        body: JSON.stringify({ 
+          error: 'Erro de conexão com o banco de dados. Verifique se as variáveis de ambiente SUPABASE_URL e SUPABASE_ANON_KEY estão configuradas corretamente.',
+          details: err.message,
+          hint: 'Certifique-se de que SUPABASE_URL começa com https:// e está acessível.'
+        }),
+      };
+    }
+    
     return {
       statusCode: 500,
       headers,

@@ -33,11 +33,18 @@ function Header() {
             </Link>
           </li>
           {isAdmin() && (
-            <li role="presentation" className={isActive('/cadastros') ? 'active' : ''}>
-              <Link to="/cadastros" className="animated-button thar-four menu-txt">
-                Cadastros
-              </Link>
-            </li>
+            <>
+              <li role="presentation" className={isActive('/cadastros') ? 'active' : ''}>
+                <Link to="/cadastros" className="animated-button thar-four menu-txt">
+                  Cadastros
+                </Link>
+              </li>
+              <li role="presentation" className={isActive('/configuracoes') ? 'active' : ''}>
+                <Link to="/configuracoes" className="animated-button thar-four menu-txt">
+                  Configuração
+                </Link>
+              </li>
+            </>
           )}
           <li role="presentation">
             <a href="#" className="menu-txt" onClick={(e) => { e.preventDefault(); logout(); }}>

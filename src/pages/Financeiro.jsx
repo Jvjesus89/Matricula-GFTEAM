@@ -16,7 +16,10 @@ function Financeiro() {
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
   const [comprovanteOpen, setComprovanteOpen] = useState(false)
+  const [pixModalOpen, setPixModalOpen] = useState(false)
   const [financeiroSelecionado, setFinanceiroSelecionado] = useState(null)
+  const [qrCodeData, setQrCodeData] = useState(null)
+  const [loadingPix, setLoadingPix] = useState(false)
   const [filterText, setFilterText] = useState('')
   const [dataInicial, setDataInicial] = useState('')
   const [dataFinal, setDataFinal] = useState('')
@@ -155,6 +158,39 @@ function Financeiro() {
     }
   }
 
+  const handleGerarPix = async (financeiro) => {
+    // Verifica se já foi pago
+    if (financeiro.data_pagamento) {
+      alert('Este pagamento já foi realizado!')
+      return
+    }
+
+    // Verifica se já tem QR Code gerado
+    if (financeiro.payment_id) {
+      alert('QR Code já foi gerado para este pagamento!')
+      return
+    }
+
+    try {
+      setLoadingPix(true)
+      const data = await api.gerarPix(financeiro.idfinanceiro)
+      setQrCodeData({
+        qr_code: data.qr_code,
+        qr_code_base64: data.qr_code_base64,
+        valor: financeiro.valor,
+        nome: financeiro.nome || financeiro.usuario,
+        idfinanceiro: financeiro.idfinanceiro
+      })
+      setPixModalOpen(true)
+      loadData() // Recarrega para atualizar o payment_id
+    } catch (error) {
+      console.error('Erro ao gerar PIX:', error)
+      alert(error.message || 'Erro ao gerar QR Code PIX')
+    } finally {
+      setLoadingPix(false)
+    }
+  }
+
   const handleFiltrar = () => {
     // Lógica de filtro por data
     loadData()
@@ -234,17 +270,34 @@ function Financeiro() {
               }}
               className="btn btn-success btn-sm"
               style={{ marginRight: '5px' }}
+              title="Imprimir Comprovante"
             >
               🖨️
             </button>
           )
         } else {
+          // Botão para gerar QR Code PIX
+          actions.push(
+            <button
+              key="pix"
+              onClick={() => handleGerarPix(row)}
+              className="btn btn-primary btn-sm"
+              style={{ marginRight: '5px' }}
+              title="Gerar QR Code PIX"
+              disabled={loadingPix || row.payment_id}
+            >
+              💳
+            </button>
+          )
+          
+          // Botão WhatsApp
           actions.push(
             <button
               key="whatsapp"
               onClick={() => api.enviarWhatsApp(row.idfinanceiro)}
               className="btn btn-success btn-sm"
               style={{ marginRight: '5px' }}
+              title="Enviar WhatsApp"
             >
               📱
             </button>
@@ -257,6 +310,7 @@ function Financeiro() {
               key="delete"
               onClick={() => handleDelete(row.idfinanceiro)}
               className="btn btn-danger btn-sm"
+              title="Excluir Pagamento"
             >
               🗑️
             </button>
@@ -268,7 +322,7 @@ function Financeiro() {
       ignoreRowClick: true,
       allowOverflow: true,
       button: true,
-      width: '150px', // Aumenta a largura da coluna de ações
+      width: '180px', // Aumenta a largura da coluna de ações
     },
   ]
 
@@ -512,6 +566,79 @@ function Financeiro() {
           }}
         />
       )}
+
+      {/* Modal QR Code PIX */}
+      <Modal
+        isOpen={pixModalOpen}
+        onClose={() => {
+          setPixModalOpen(false)
+          setQrCodeData(null)
+        }}
+        title="QR Code PIX"
+      >
+        {qrCodeData && (
+          <div style={{ textAlign: 'center', padding: '20px' }}>
+            <div style={{ marginBottom: '20px' }}>
+              <p><strong>Aluno:</strong> {qrCodeData.nome}</p>
+              <p><strong>Valor:</strong> R$ {parseFloat(qrCodeData.valor || 0).toFixed(2)}</p>
+            </div>
+            
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'center', 
+              marginBottom: '20px',
+              padding: '20px',
+              backgroundColor: '#f5f5f5',
+              borderRadius: '8px'
+            }}>
+              <img 
+                src={`data:image/png;base64,${qrCodeData.qr_code_base64}`}
+                alt="QR Code PIX"
+                style={{ maxWidth: '300px', width: '100%', height: 'auto' }}
+              />
+            </div>
+
+            <div style={{ 
+              marginTop: '20px', 
+              padding: '15px', 
+              backgroundColor: '#e8f5e9', 
+              borderRadius: '8px',
+              wordBreak: 'break-all'
+            }}>
+              <p style={{ marginBottom: '10px', fontWeight: 'bold' }}>Código PIX (Copiar e Colar):</p>
+              <textarea
+                readOnly
+                value={qrCodeData.qr_code}
+                style={{
+                  width: '100%',
+                  minHeight: '80px',
+                  padding: '10px',
+                  borderRadius: '4px',
+                  border: '1px solid #ccc',
+                  fontSize: '12px',
+                  fontFamily: 'monospace',
+                  resize: 'vertical'
+                }}
+                onClick={(e) => e.target.select()}
+              />
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(qrCodeData.qr_code)
+                  alert('Código PIX copiado para a área de transferência!')
+                }}
+                className="btn btn-primary"
+                style={{ marginTop: '10px', width: '100%' }}
+              >
+                📋 Copiar Código PIX
+              </button>
+            </div>
+
+            <div style={{ marginTop: '20px', fontSize: '12px', color: '#666' }}>
+              <p>Escaneie o QR Code com o app do seu banco ou copie o código PIX para pagar.</p>
+            </div>
+          </div>
+        )}
+      </Modal>
     </>
   )
 }

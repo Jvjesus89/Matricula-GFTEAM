@@ -114,3 +114,4 @@ function ComprovantePagamento({ financeiro, onClose }) {
 
 export default ComprovantePagamento
 
+

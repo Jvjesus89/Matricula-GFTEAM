@@ -4,6 +4,7 @@ import Login from './pages/Login'
 import Principal from './pages/Principal'
 import Alunos from './pages/Alunos'
 import Financeiro from './pages/Financeiro'
+import Configuracoes from './pages/Configuracoes'
 import Layout from './components/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
 
@@ -61,6 +62,14 @@ function AppRoutes() {
           element={
             <ProtectedRoute requireAdmin>
               <Alunos />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="configuracoes"
+          element={
+            <ProtectedRoute requireAdmin>
+              <Configuracoes />
             </ProtectedRoute>
           }
         />

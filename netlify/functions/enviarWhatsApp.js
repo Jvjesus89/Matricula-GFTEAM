@@ -1,4 +1,15 @@
 const axios = require('axios');
+const { createClient } = require('@supabase/supabase-js');
+
+// Configuração do Supabase
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+  console.error('Variáveis de ambiente SUPABASE_URL e SUPABASE_ANON_KEY não configuradas!');
+}
+
+const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
 
 // Configuração do WhatsApp Business API
 const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
@@ -37,50 +48,128 @@ exports.handler = async function(event, context) {
   }
 
   try {
-    const { telefone, usuario, valor, dataVencimento } = JSON.parse(event.body);
+    if (!supabase) {
+      return {
+        statusCode: 500,
+        headers: corsHeaders,
+        body: JSON.stringify({
+          sucesso: false,
+          erro: 'Configuração do banco de dados não encontrada'
+        })
+      };
+    }
 
-    if (!telefone || !usuario || !valor || !dataVencimento) {
+    const body = JSON.parse(event.body);
+    const { idfinanceiro, telefone, usuario, valor, dataVencimento } = body;
+
+    let telefoneFinal, usuarioFinal, valorFinal, dataVencimentoFinal;
+
+    // Se recebeu idfinanceiro, busca os dados no banco
+    if (idfinanceiro) {
+      console.log('🔍 Buscando dados do financeiro:', idfinanceiro);
+      
+      const { data: financeiro, error: financeiroError } = await supabase
+        .from('financeiro')
+        .select(`
+          *,
+          usuarios (
+            nome,
+            telefone
+          )
+        `)
+        .eq('idfinanceiro', idfinanceiro)
+        .single();
+
+      if (financeiroError) {
+        console.error('❌ Erro ao buscar financeiro:', financeiroError);
+        return {
+          statusCode: 404,
+          headers: corsHeaders,
+          body: JSON.stringify({
+            sucesso: false,
+            erro: 'Lançamento financeiro não encontrado'
+          })
+        };
+      }
+
+      if (!financeiro) {
+        return {
+          statusCode: 404,
+          headers: corsHeaders,
+          body: JSON.stringify({
+            sucesso: false,
+            erro: 'Lançamento financeiro não encontrado'
+          })
+        };
+      }
+
+      // Extrai os dados do financeiro
+      telefoneFinal = financeiro.usuarios?.telefone;
+      usuarioFinal = financeiro.usuarios?.nome || financeiro.usuario || 'Cliente';
+      valorFinal = `R$ ${parseFloat(financeiro.valor || 0).toFixed(2)}`;
+      dataVencimentoFinal = new Date(financeiro.data_vencimento).toLocaleDateString('pt-BR');
+
+      console.log('✅ Dados do financeiro encontrados:', {
+        usuario: usuarioFinal,
+        valor: valorFinal,
+        dataVencimento: dataVencimentoFinal,
+        telefone: telefoneFinal ? 'Presente' : 'Ausente'
+      });
+    } else {
+      // Se não recebeu idfinanceiro, usa os dados diretos (compatibilidade com código antigo)
+      telefoneFinal = telefone;
+      usuarioFinal = usuario;
+      valorFinal = valor;
+      dataVencimentoFinal = dataVencimento;
+    }
+
+    // Validação dos dados
+    if (!telefoneFinal || !usuarioFinal || !valorFinal || !dataVencimentoFinal) {
       console.log('❌ Dados incompletos:', { 
-        telefone: !!telefone, 
-        usuario: !!usuario, 
-        valor: !!valor, 
-        dataVencimento: !!dataVencimento 
+        telefone: !!telefoneFinal, 
+        usuario: !!usuarioFinal, 
+        valor: !!valorFinal, 
+        dataVencimento: !!dataVencimentoFinal 
       });
       return {
         statusCode: 400,
         headers: corsHeaders,
         body: JSON.stringify({
           sucesso: false,
-          erro: 'Todos os campos são obrigatórios'
+          erro: 'Dados incompletos. Verifique se o lançamento tem telefone cadastrado.'
         })
       };
     }
 
     // Garante que o número está no formato correto (apenas números)
-    const numeroFormatado = telefone.replace(/\D/g, '');
+    let numeroFormatado = telefoneFinal.replace(/\D/g, '');
+    
+    // Adiciona prefixo 55 se não tiver (código do Brasil)
+    if (!numeroFormatado.startsWith('55')) {
+      numeroFormatado = '55' + numeroFormatado;
+    }
+    
     console.log('📱 Número formatado:', numeroFormatado);
 
     console.log('📤 Enviando mensagem para:', numeroFormatado);
-    console.log('📝 Dados da mensagem:', { usuario, valor, dataVencimento });
+    console.log('📝 Dados da mensagem:', { usuario: usuarioFinal, valor: valorFinal, dataVencimento: dataVencimentoFinal });
 
-    // Verifica o status do número do WhatsApp
-    try {
-      console.log('🔍 Verificando status do número do WhatsApp...');
-      const statusResponse = await axios({
-        method: 'GET',
-        url: `https://graph.facebook.com/v22.0/${WHATSAPP_PHONE_NUMBER_ID}`,
-        headers: {
-          'Authorization': `Bearer ${WHATSAPP_TOKEN}`
-        }
-      });
-      console.log('✅ Status do número:', statusResponse.data);
-    } catch (statusError) {
-      console.error('❌ Erro ao verificar status:', statusError.response?.data || statusError.message);
+    // Valida configurações do WhatsApp
+    if (!WHATSAPP_TOKEN || !WHATSAPP_PHONE_NUMBER_ID) {
+      console.error('❌ Configurações do WhatsApp não encontradas');
+      return {
+        statusCode: 500,
+        headers: corsHeaders,
+        body: JSON.stringify({
+          sucesso: false,
+          erro: 'Configurações do WhatsApp não encontradas. Verifique as variáveis de ambiente WHATSAPP_TOKEN e WHATSAPP_PHONE_NUMBER_ID.'
+        })
+      };
     }
 
     const response = await axios({
       method: 'POST',
-      url: `https://graph.facebook.com/v22.0/${WHATSAPP_PHONE_NUMBER_ID}/messages`,
+      url: `https://graph.facebook.com/v23.0/${WHATSAPP_PHONE_NUMBER_ID}/messages`,
       headers: {
         'Authorization': `Bearer ${WHATSAPP_TOKEN}`,
         'Content-Type': 'application/json'
@@ -100,15 +189,15 @@ exports.handler = async function(event, context) {
               parameters: [
                 {
                   type: 'text',
-                  text: usuario
+                  text: usuarioFinal
                 },
                 {
                   type: 'text',
-                  text: valor
+                  text: valorFinal
                 },
                 {
                   type: 'text',
-                  text: dataVencimento
+                  text: dataVencimentoFinal
                 }
               ]
             }
@@ -132,16 +221,33 @@ exports.handler = async function(event, context) {
     console.error('❌ Erro detalhado:', {
       message: error.message,
       response: error.response?.data,
-      status: error.response?.status,
-      headers: error.response?.headers
+      status: error.response?.status
     });
     
+    // Tratamento específico para erros comuns
+    let mensagemErro = 'Erro ao enviar mensagem via WhatsApp';
+    
+    if (error.response?.data?.error) {
+      const errorData = error.response.data.error;
+      
+      if (errorData.code === 100 && errorData.error_subcode === 33) {
+        mensagemErro = 'ID do número de telefone do WhatsApp inválido ou sem permissões. Verifique a variável WHATSAPP_PHONE_NUMBER_ID.';
+      } else if (errorData.code === 190) {
+        mensagemErro = 'Token de acesso do WhatsApp inválido ou expirado. Verifique a variável WHATSAPP_TOKEN.';
+      } else if (errorData.message) {
+        mensagemErro = errorData.message;
+      }
+    } else if (error.message) {
+      mensagemErro = error.message;
+    }
+    
     return {
-      statusCode: 500,
+      statusCode: error.response?.status || 500,
       headers: corsHeaders,
       body: JSON.stringify({
         sucesso: false,
-        erro: error.response?.data || error.message
+        erro: mensagemErro,
+        detalhes: error.response?.data || error.message
       })
     };
   }

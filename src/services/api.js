@@ -90,11 +90,11 @@ export const api = {
     const response = await fetch('/.netlify/functions/gerarPix', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ idfinanceiro }),
+      body: JSON.stringify({ pagamentoId: idfinanceiro }),
     })
     if (!response.ok) {
       const error = await response.json()
-      throw new Error(error.error || 'Erro ao gerar PIX')
+      throw new Error(error.error || error.detalhe || 'Erro ao gerar PIX')
     }
     return response.json()
   },
@@ -180,6 +180,38 @@ export const api = {
     }
     const data = await response.json()
     return data.disponivel === true
+  },
+
+  // Configurações
+  async obterConfiguracoes() {
+    const response = await fetch('/.netlify/functions/obterConfiguracoes')
+    if (!response.ok) throw new Error('Erro ao carregar configurações')
+    return response.json()
+  },
+
+  async salvarConfiguracoes(data) {
+    const response = await fetch('/.netlify/functions/salvarConfiguracoes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    })
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Erro ao salvar configurações')
+    }
+    return response.json()
+  },
+
+  async processarLancamentosMensais() {
+    const response = await fetch('/.netlify/functions/processarLancamentosMensais', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    })
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || error.detalhe || 'Erro ao processar lançamentos')
+    }
+    return response.json()
   },
 }
 
