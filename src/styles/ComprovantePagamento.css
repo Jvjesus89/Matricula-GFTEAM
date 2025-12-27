@@ -1,0 +1,191 @@
+/* Overlay do comprovante */
+.comprovante-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 20px;
+}
+
+.comprovante-container {
+  background: white;
+  border-radius: 8px;
+  max-width: 600px;
+  width: 100%;
+  position: relative;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.comprovante-close-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 35px;
+  height: 35px;
+  font-size: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10001;
+  transition: background 0.3s;
+}
+
+.comprovante-close-btn:hover {
+  background: #c82333;
+}
+
+.comprovante-content {
+  padding: 40px 60px;
+  text-align: center;
+}
+
+/* Header com logos */
+.comprovante-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 30px;
+  margin-bottom: 30px;
+}
+
+.comprovante-logo-gfteam {
+  height: 120px;
+  width: auto;
+  object-fit: contain;
+}
+
+.comprovante-logo-saquafit {
+  height: 80px;
+  width: auto;
+  object-fit: contain;
+}
+
+/* Título */
+.comprovante-title {
+  font-size: 28px;
+  font-weight: bold;
+  color: #000;
+  margin: 0 0 40px 0;
+  text-align: center;
+}
+
+/* Dados do pagamento */
+.comprovante-dados {
+  text-align: left;
+  margin-bottom: 40px;
+}
+
+.comprovante-item {
+  display: flex;
+  margin-bottom: 25px;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.comprovante-label {
+  font-weight: bold;
+  color: #000;
+  min-width: 180px;
+  margin-right: 10px;
+}
+
+.comprovante-value {
+  color: #333;
+  flex: 1;
+}
+
+/* Rodapé */
+.comprovante-footer {
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 1px solid #e0e0e0;
+  color: #666;
+  font-size: 12px;
+}
+
+/* Botão Imprimir */
+.comprovante-actions {
+  margin-top: 30px;
+  display: flex;
+  justify-content: center;
+}
+
+.comprovante-btn-print {
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  padding: 12px 40px;
+  border-radius: 4px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.comprovante-btn-print:hover {
+  background-color: #5a6268;
+}
+
+/* Estilos para impressão */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .comprovante-overlay,
+  .comprovante-overlay * {
+    visibility: visible;
+  }
+
+  .comprovante-overlay {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: white;
+    padding: 0;
+  }
+
+  .comprovante-container {
+    max-width: 100%;
+    box-shadow: none;
+    border: none;
+  }
+
+  .comprovante-close-btn,
+  .comprovante-btn-print {
+    display: none !important;
+  }
+
+  .comprovante-content {
+    padding: 20px;
+  }
+
+  .comprovante-header {
+    margin-bottom: 20px;
+  }
+
+  .comprovante-title {
+    margin-bottom: 30px;
+  }
+
+  .comprovante-dados {
+    margin-bottom: 30px;
+  }
+
+  .comprovante-footer {
+    margin-top: 30px;
+  }
+}
+

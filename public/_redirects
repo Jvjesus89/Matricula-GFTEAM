@@ -1,0 +1,9 @@
+/*    /index.html   200
+
+# Redireciona rotas antigas para React Router
+/index.html    /    200
+/Index.html   /    200
+/Principal.html   /principal    301
+/Alunos.html      /alunos       301
+/Financeiro.html  /financeiro   301
+

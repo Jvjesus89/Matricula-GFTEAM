@@ -1,62 +1,31 @@
 <!DOCTYPE html>
-<html>
-<head>
-    <title>GF TEAM</title>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Favicon -->
-    <link rel="icon" type="image/png" sizes="32x32" href="picture/gfteam.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="picture/gfteam.png">
-    <link rel="shortcut icon" type="image/png" href="picture/gfteam.png">
-    <link rel="apple-touch-icon" href="picture/gfteam.png">
-    <!-- Estilos -->
-    <link rel="stylesheet" href="css/stylepadrao.css">
-    <link rel="stylesheet" href="css/bootstrap.css">    
-</head>
-
-<body>
-    <br>
-    <br>
-    <br>
-    <br>
-
-    <div style="align-items: center; justify-content: center; display: flex;">
-        <img src="picture/gfteam.png" style="height: 180px;">
-    </div>
-
-    <br>
-    <br>
-    <br>
-
-
-    <div class="container">
-        <main>
-            <form id="formCadastro">
-                <div class="form-grupo">
-                    <label for="usuario" style="color: #ffffff;">Login:</label>
-                    <input type="text" id="usuario" name="usuario" autocomplete="username" required>
-                </div>
-
-                <div class="form-grupo">
-                    <label for="senha" style="color: #ffffff;">Senha:</label>
-                    <input type="password" id="senha" required autocomplete="current-password">
-                </div>
-
-                <button id="botao" type="button" onclick="verificarLogin()">Acessar</button>
-            </form>
-        </main>
-    </div>
-
-    <div class="imagem-footer">
-        <img src="picture/Screenshot_2.png" alt="GF TEAM">
-    </div>
-
-    <div id="footer-placeholder"></div>
-   
-    <!-- jQuery primeiro -->
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <!-- Depois seus scripts -->
-    <script src="dados.js"></script>
-    <script src="layout.js"></script>
-</body>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/picture/gfteam.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GF TEAM - Sistema de Matrícula</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background-color: #f5f5f5;
+      }
+      #root {
+        min-height: 100vh;
+        width: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <noscript>Você precisa habilitar JavaScript para executar esta aplicação.</noscript>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
 </html>
