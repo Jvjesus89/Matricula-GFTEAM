@@ -6,6 +6,7 @@ import { fileURLToPath } from 'url'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig({
+  root: '.',
   plugins: [react()],
   resolve: {
     alias: {
@@ -26,6 +27,9 @@ export default defineConfig({
     outDir: 'dist',
     assetsDir: 'assets',
     sourcemap: false,
+    rollupOptions: {
+      input: path.resolve(__dirname, './index.html'),
+    },
   },
   css: {
     devSourcemap: false,
