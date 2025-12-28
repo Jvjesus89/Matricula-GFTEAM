@@ -203,11 +203,9 @@ export const api = {
   },
 
   async processarLancamentosMensais() {
-    try {
-      // Sempre usa a função manual que não tem restrições de função agendada
-      // A função manual funciona tanto em desenvolvimento quanto em produção
-      const functionName = 'processarLancamentosMensaisManual'
-      
+    // Tenta primeiro a função manual (sem restrições)
+    // Se falhar, tenta a função agendada como fallback
+    const tentarFuncao = async (functionName) => {
       const response = await fetch(`/.netlify/functions/${functionName}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -225,7 +223,6 @@ export const api = {
             const error = JSON.parse(responseText)
             errorMessage = error.error || error.detalhe || error.message || errorMessage
           } else if (responseText) {
-            // Se não for JSON, tenta extrair informações úteis
             errorMessage = responseText.substring(0, 300).replace(/<[^>]*>/g, '') || errorMessage
           }
         } catch (e) {
@@ -237,7 +234,6 @@ export const api = {
         throw new Error(errorMessage)
       }
       
-      // Se a resposta é ok, verifica se é JSON
       if (!isJson) {
         throw new Error(`Resposta inválida do servidor (não é JSON): ${responseText.substring(0, 200)}`)
       }
@@ -246,6 +242,17 @@ export const api = {
         return JSON.parse(responseText)
       } catch (e) {
         throw new Error(`Erro ao processar resposta JSON: ${e.message}`)
+      }
+    }
+
+    try {
+      // Tenta primeiro a função manual
+      try {
+        return await tentarFuncao('processarLancamentosMensaisManual')
+      } catch (errorManual) {
+        console.warn('Função manual falhou, tentando função agendada:', errorManual.message)
+        // Se a função manual não existir ou falhar, tenta a agendada
+        return await tentarFuncao('processarLancamentosMensais')
       }
     } catch (error) {
       // Se for um erro de rede ou timeout
