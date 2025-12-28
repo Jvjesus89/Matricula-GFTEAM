@@ -204,12 +204,9 @@ export const api = {
 
   async processarLancamentosMensais() {
     try {
-      // Em desenvolvimento, usa a função manual que não tem restrições
-      // Em produção, tenta a função agendada primeiro, se falhar usa a manual
-      const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-      const functionName = isDevelopment 
-        ? 'processarLancamentosMensaisManual' 
-        : 'processarLancamentosMensais'
+      // Sempre usa a função manual que não tem restrições de função agendada
+      // A função manual funciona tanto em desenvolvimento quanto em produção
+      const functionName = 'processarLancamentosMensaisManual'
       
       const response = await fetch(`/.netlify/functions/${functionName}`, {
         method: 'POST',
