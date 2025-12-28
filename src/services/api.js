@@ -208,7 +208,18 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
     })
     if (!response.ok) {
-      const error = await response.json()
+      let error
+      try {
+        const contentType = response.headers.get('content-type')
+        if (contentType && contentType.includes('application/json')) {
+          error = await response.json()
+        } else {
+          const text = await response.text()
+          throw new Error(`Erro ${response.status}: ${text.substring(0, 200)}`)
+        }
+      } catch (e) {
+        throw new Error(`Erro ao processar lançamentos: ${response.status} ${response.statusText}`)
+      }
       throw new Error(error.error || error.detalhe || 'Erro ao processar lançamentos')
     }
     return response.json()

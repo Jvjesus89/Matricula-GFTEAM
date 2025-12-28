@@ -1,4 +1,5 @@
 [build]
+<<<<<<< HEAD
   command = "npm run build"
   publish = "dist"
   functions = "netlify/functions"
@@ -14,11 +15,16 @@
   NETLIFY_USE_YARN = "false"
   NETLIFY_FUNCTIONS_LOG = "true"
 
+=======
+  functions = "netlify/functions"
+
+>>>>>>> produção
 [[plugins]]
 package = "@netlify/plugin-functions-install-core"
 
 # Configuração do cron job para verificar vencimentos
 [functions.verificarVencimentos]
+<<<<<<< HEAD
 schedule = "0 12 * * *" # Executa todos os dias às 12:00 UTC (09:00 BRT)
 
 # Configuração do cron job para processar lançamentos mensais
@@ -32,3 +38,6 @@ schedule = "0 8 1-5 * *" # Executa nos dias 01-05 de cada mês às 08:00 UTC (05
 [functions]
   node_bundler = "esbuild"
   external_node_modules = ["@supabase/supabase-js", "axios"] 
+=======
+schedule = "@daily" # Executa uma vez por dia 
+>>>>>>> produção
