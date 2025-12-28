@@ -248,11 +248,22 @@ export const api = {
     try {
       // Tenta primeiro a função manual
       try {
+        console.log('🔄 Tentando função manual...')
         return await tentarFuncao('processarLancamentosMensaisManual')
       } catch (errorManual) {
-        console.warn('Função manual falhou, tentando função agendada:', errorManual.message)
-        // Se a função manual não existir ou falhar, tenta a agendada
-        return await tentarFuncao('processarLancamentosMensais')
+        console.warn('⚠️ Função manual falhou:', errorManual.message)
+        console.warn('🔄 Tentando função agendada como fallback...')
+        try {
+          // Se a função manual não existir ou falhar, tenta a agendada
+          return await tentarFuncao('processarLancamentosMensais')
+        } catch (errorAgendada) {
+          // Se ambas falharem, mostra o erro mais detalhado
+          console.error('❌ Ambas as funções falharam:')
+          console.error('   Manual:', errorManual.message)
+          console.error('   Agendada:', errorAgendada.message)
+          // Retorna o erro mais informativo
+          throw new Error(`Erro ao processar lançamentos. Função manual: ${errorManual.message}. Função agendada: ${errorAgendada.message}`)
+        }
       }
     } catch (error) {
       // Se for um erro de rede ou timeout
