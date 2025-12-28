@@ -17,8 +17,12 @@ const corsHeaders = {
   'Content-Type': 'application/json'
 };
 
+// Importa a função de processamento da função principal
+// Como não podemos importar diretamente, vamos duplicar a lógica ou criar um módulo compartilhado
+// Por enquanto, vamos criar uma versão simplificada que chama a mesma lógica
+
 async function processarLancamentosMensais(forcarProcessamento = false) {
-  console.log('🔄 Iniciando processamento de lançamentos mensais...');
+  console.log('🔄 Iniciando processamento de lançamentos mensais (manual)...');
 
   try {
     if (!supabase) {
@@ -29,63 +33,6 @@ async function processarLancamentosMensais(forcarProcessamento = false) {
     const diaAtual = hoje.getDate();
     const mesAtual = hoje.getMonth() + 1;
     const anoAtual = hoje.getFullYear();
-
-    // Se não for forçado e não for dia 01, verifica se já foi processado este mês
-    // Mas permite processar nos primeiros 5 dias do mês como backup
-    if (!forcarProcessamento && diaAtual > 5) {
-      // Após o dia 5, verifica se já existe lançamento antes de processar
-      const primeiroDiaMes = `${anoAtual}-${String(mesAtual).padStart(2, '0')}-01`;
-      const ultimoDiaMes = `${anoAtual}-${String(mesAtual).padStart(2, '0')}-31`;
-      
-      const { data: lancamentosExistentes, error: verificaError } = await supabase
-        .from('financeiro')
-        .select('idusuario')
-        .gte('data_vencimento', primeiroDiaMes)
-        .lte('data_vencimento', ultimoDiaMes)
-        .limit(1);
-
-      if (verificaError && verificaError.code !== 'PGRST116') {
-        console.error('❌ Erro ao verificar lançamentos existentes:', verificaError);
-        // Continua o processamento mesmo com erro na verificação
-      } else if (lancamentosExistentes && lancamentosExistentes.length > 0) {
-        console.log(`⏭️ Já existem lançamentos para o mês ${mesAtual}/${anoAtual}. Processamento ignorado.`);
-        console.log(`💡 Para forçar o processamento, use o botão manual ou aguarde o dia 01 do próximo mês.`);
-        return {
-          message: 'Lançamentos já foram criados para este mês',
-          mes: mesAtual,
-          ano: anoAtual,
-          dia_atual: diaAtual,
-          pode_forcar: true
-        };
-      } else {
-        console.log(`⚠️ Não é dia 01, mas não foram encontrados lançamentos para o mês ${mesAtual}/${anoAtual}.`);
-        console.log(`🔄 Continuando o processamento para criar os lançamentos faltantes...`);
-      }
-    } else if (!forcarProcessamento && diaAtual >= 1 && diaAtual <= 5) {
-      // Nos primeiros 5 dias do mês, verifica se existem lançamentos mas permite criar se não existirem
-      console.log(`📅 Executando nos primeiros dias do mês (dia ${diaAtual}). Verificando se é necessário criar lançamentos...`);
-      
-      // Verifica se já existem lançamentos, mas não bloqueia o processamento
-      const primeiroDiaMes = `${anoAtual}-${String(mesAtual).padStart(2, '0')}-01`;
-      const ultimoDiaMes = `${anoAtual}-${String(mesAtual).padStart(2, '0')}-31`;
-      
-      const { data: lancamentosExistentes, error: verificaError } = await supabase
-        .from('financeiro')
-        .select('idusuario')
-        .gte('data_vencimento', primeiroDiaMes)
-        .lte('data_vencimento', ultimoDiaMes)
-        .limit(1);
-
-      if (verificaError && verificaError.code !== 'PGRST116') {
-        console.error('❌ Erro ao verificar lançamentos existentes:', verificaError);
-        // Continua o processamento mesmo com erro na verificação
-      } else if (lancamentosExistentes && lancamentosExistentes.length > 0) {
-        console.log(`✅ Já existem lançamentos para o mês ${mesAtual}/${anoAtual}. A função processará apenas os alunos que ainda não têm lançamento.`);
-        // Não retorna aqui, permite que a função continue para processar alunos que ainda não têm lançamento
-      } else {
-        console.log(`🔄 Não foram encontrados lançamentos para o mês ${mesAtual}/${anoAtual}. Criando lançamentos...`);
-      }
-    }
 
     // Busca as configurações
     const { data: config, error: configError } = await supabase
@@ -237,11 +184,14 @@ async function processarLancamentosMensais(forcarProcessamento = false) {
         }
       } catch (error) {
         console.error(`❌ Erro ao processar aluno ${aluno.nome}:`, error);
+        console.error(`❌ Stack trace:`, error.stack);
         totalErros++;
         resultados.push({
-          aluno: aluno.nome,
+          aluno: aluno.nome || aluno.usuario || `ID: ${aluno.idusuario}`,
           acao: 'Erro',
-          erro: error.message
+          erro: error.message || 'Erro desconhecido',
+          detalhes: error.code || error.details || undefined,
+          idusuario: aluno.idusuario
         });
       }
     }
@@ -280,7 +230,7 @@ exports.handler = async function(event, context) {
         headers: corsHeaders,
         body: JSON.stringify({
           error: 'Configuração do servidor incompleta',
-          detalhe: 'As variáveis de ambiente SUPABASE_URL e SUPABASE_ANON_KEY não estão configuradas. Configure-as no painel do Netlify.'
+          detalhe: 'As variáveis de ambiente SUPABASE_URL e SUPABASE_ANON_KEY não estão configuradas. Configure-as no painel do Netlify ou no arquivo .env local.'
         })
       };
     }
@@ -294,20 +244,6 @@ exports.handler = async function(event, context) {
       };
     }
 
-    // Se for uma chamada agendada (sem event.httpMethod)
-    if (!event.httpMethod) {
-      console.log('⏰ Executando como função agendada');
-      try {
-        const resultado = await processarLancamentosMensais();
-        console.log('✅ Função agendada concluída:', resultado);
-        return;
-      } catch (error) {
-        console.error('❌ Erro na função agendada:', error);
-        // Para funções agendadas, não retornamos erro HTTP, apenas logamos
-        return;
-      }
-    }
-
     // Permite GET e POST para chamadas manuais
     if (event.httpMethod !== 'GET' && event.httpMethod !== 'POST') {
       return {
@@ -317,10 +253,10 @@ exports.handler = async function(event, context) {
       };
     }
 
-    // Se for uma chamada HTTP normal (manual), força o processamento
-    console.log('🌐 Executando como função HTTP (forçado)');
+    // Sempre força o processamento (esta é a versão manual)
+    console.log('🌐 Executando processamento manual de lançamentos');
     const resultado = await processarLancamentosMensais(true);
-    console.log('✅ Função HTTP concluída:', resultado);
+    console.log('✅ Processamento manual concluído:', resultado);
 
     return {
       statusCode: resultado.error ? 500 : 200,
