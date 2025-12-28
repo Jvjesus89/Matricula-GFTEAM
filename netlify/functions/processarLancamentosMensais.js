@@ -267,41 +267,54 @@ async function processarLancamentosMensais(forcarProcessamento = false) {
 }
 
 exports.handler = async function(event, context) {
-  // Tratamento para requisições OPTIONS (preflight)
-  if (event.httpMethod === 'OPTIONS') {
-    return {
-      statusCode: 200,
-      headers: corsHeaders,
-      body: ''
-    };
-  }
+  try {
+    // Tratamento para requisições OPTIONS (preflight)
+    if (event.httpMethod === 'OPTIONS') {
+      return {
+        statusCode: 200,
+        headers: corsHeaders,
+        body: ''
+      };
+    }
 
-  // Se for uma chamada agendada (sem event.httpMethod)
-  if (!event.httpMethod) {
-    console.log('⏰ Executando como função agendada');
-    const resultado = await processarLancamentosMensais();
-    console.log('✅ Função agendada concluída:', resultado);
-    return;
-  }
+    // Se for uma chamada agendada (sem event.httpMethod)
+    if (!event.httpMethod) {
+      console.log('⏰ Executando como função agendada');
+      const resultado = await processarLancamentosMensais();
+      console.log('✅ Função agendada concluída:', resultado);
+      return;
+    }
 
-  // Permite GET e POST para chamadas manuais
-  if (event.httpMethod !== 'GET' && event.httpMethod !== 'POST') {
-    return {
-      statusCode: 405,
-      headers: corsHeaders,
-      body: JSON.stringify({ error: 'Método não permitido' })
-    };
-  }
+    // Permite GET e POST para chamadas manuais
+    if (event.httpMethod !== 'GET' && event.httpMethod !== 'POST') {
+      return {
+        statusCode: 405,
+        headers: corsHeaders,
+        body: JSON.stringify({ error: 'Método não permitido' })
+      };
+    }
 
     // Se for uma chamada HTTP normal (manual), força o processamento
     console.log('🌐 Executando como função HTTP (forçado)');
     const resultado = await processarLancamentosMensais(true);
     console.log('✅ Função HTTP concluída:', resultado);
 
-  return {
-    statusCode: resultado.error ? 500 : 200,
-    headers: corsHeaders,
-    body: JSON.stringify(resultado)
-  };
+    return {
+      statusCode: resultado.error ? 500 : 200,
+      headers: corsHeaders,
+      body: JSON.stringify(resultado)
+    };
+  } catch (error) {
+    console.error('❌ Erro não tratado no handler:', error);
+    return {
+      statusCode: 500,
+      headers: corsHeaders,
+      body: JSON.stringify({
+        error: 'Erro ao processar lançamentos mensais',
+        detalhe: error.message || 'Erro desconhecido',
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      })
+    };
+  }
 };
 
