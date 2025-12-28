@@ -131,9 +131,12 @@ function Configuracoes() {
 
     try {
       setLoadingTeste(true)
-      // Cria vencimento para 10 dias a partir de hoje
-      const dataVencimento = new Date()
-      dataVencimento.setDate(dataVencimento.getDate() + 10)
+      // Cria vencimento para o dia 10 do mês atual (igual à função automática)
+      const hoje = new Date()
+      const anoAtual = hoje.getFullYear()
+      const mesAtual = hoje.getMonth() + 1
+      
+      const dataVencimento = new Date(anoAtual, mesAtual - 1, 10)
       const dataVencimentoStr = dataVencimento.toISOString().split('T')[0]
 
       const resultado = await api.cadastrarFinanceiro({

@@ -31,8 +31,9 @@ async function processarLancamentosMensais(forcarProcessamento = false) {
     const anoAtual = hoje.getFullYear();
 
     // Se não for forçado e não for dia 01, verifica se já foi processado este mês
-    if (!forcarProcessamento && diaAtual !== 1) {
-      // Verifica se já existe lançamento para algum aluno no mês atual
+    // Mas permite processar nos primeiros 5 dias do mês como backup
+    if (!forcarProcessamento && diaAtual > 5) {
+      // Após o dia 5, verifica se já existe lançamento antes de processar
       const primeiroDiaMes = `${anoAtual}-${String(mesAtual).padStart(2, '0')}-01`;
       const ultimoDiaMes = `${anoAtual}-${String(mesAtual).padStart(2, '0')}-31`;
       
@@ -59,6 +60,30 @@ async function processarLancamentosMensais(forcarProcessamento = false) {
       } else {
         console.log(`⚠️ Não é dia 01, mas não foram encontrados lançamentos para o mês ${mesAtual}/${anoAtual}.`);
         console.log(`🔄 Continuando o processamento para criar os lançamentos faltantes...`);
+      }
+    } else if (!forcarProcessamento && diaAtual >= 1 && diaAtual <= 5) {
+      // Nos primeiros 5 dias do mês, verifica se existem lançamentos mas permite criar se não existirem
+      console.log(`📅 Executando nos primeiros dias do mês (dia ${diaAtual}). Verificando se é necessário criar lançamentos...`);
+      
+      // Verifica se já existem lançamentos, mas não bloqueia o processamento
+      const primeiroDiaMes = `${anoAtual}-${String(mesAtual).padStart(2, '0')}-01`;
+      const ultimoDiaMes = `${anoAtual}-${String(mesAtual).padStart(2, '0')}-31`;
+      
+      const { data: lancamentosExistentes, error: verificaError } = await supabase
+        .from('financeiro')
+        .select('idusuario')
+        .gte('data_vencimento', primeiroDiaMes)
+        .lte('data_vencimento', ultimoDiaMes)
+        .limit(1);
+
+      if (verificaError && verificaError.code !== 'PGRST116') {
+        console.error('❌ Erro ao verificar lançamentos existentes:', verificaError);
+        // Continua o processamento mesmo com erro na verificação
+      } else if (lancamentosExistentes && lancamentosExistentes.length > 0) {
+        console.log(`✅ Já existem lançamentos para o mês ${mesAtual}/${anoAtual}. A função processará apenas os alunos que ainda não têm lançamento.`);
+        // Não retorna aqui, permite que a função continue para processar alunos que ainda não têm lançamento
+      } else {
+        console.log(`🔄 Não foram encontrados lançamentos para o mês ${mesAtual}/${anoAtual}. Criando lançamentos...`);
       }
     }
 
