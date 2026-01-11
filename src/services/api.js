@@ -203,75 +203,26 @@ export const api = {
   },
 
   async processarLancamentosMensais() {
-    // Tenta primeiro a função manual (sem restrições)
-    // Se falhar, tenta a função agendada como fallback
-    const tentarFuncao = async (functionName) => {
-      const response = await fetch(`/.netlify/functions/${functionName}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      })
-      
-      // Lê o texto da resposta primeiro
-      const responseText = await response.text()
-      const contentType = response.headers.get('content-type') || ''
-      const isJson = contentType.includes('application/json')
-      
-      if (!response.ok) {
-        let errorMessage = `Erro ${response.status}: ${response.statusText}`
-        try {
-          if (isJson && responseText) {
-            const error = JSON.parse(responseText)
-            errorMessage = error.error || error.detalhe || error.message || errorMessage
-          } else if (responseText) {
-            errorMessage = responseText.substring(0, 300).replace(/<[^>]*>/g, '') || errorMessage
-          }
-        } catch (e) {
-          console.error('Erro ao processar resposta de erro:', e)
-          if (responseText) {
-            errorMessage = responseText.substring(0, 300).replace(/<[^>]*>/g, '') || errorMessage
-          }
-        }
-        throw new Error(errorMessage)
-      }
-      
-      if (!isJson) {
-        throw new Error(`Resposta inválida do servidor (não é JSON): ${responseText.substring(0, 200)}`)
-      }
-      
+    const response = await fetch('/.netlify/functions/processarLancamentosMensais', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    })
+    if (!response.ok) {
+      let error
       try {
-        return JSON.parse(responseText)
+        const contentType = response.headers.get('content-type')
+        if (contentType && contentType.includes('application/json')) {
+          error = await response.json()
+        } else {
+          const text = await response.text()
+          throw new Error(`Erro ${response.status}: ${text.substring(0, 200)}`)
+        }
       } catch (e) {
-        throw new Error(`Erro ao processar resposta JSON: ${e.message}`)
+        throw new Error(`Erro ao processar lançamentos: ${response.status} ${response.statusText}`)
       }
+      throw new Error(error.error || error.detalhe || 'Erro ao processar lançamentos')
     }
-
-    try {
-      // Tenta primeiro a função manual
-      try {
-        console.log('🔄 Tentando função manual...')
-        return await tentarFuncao('processarLancamentosMensaisManual')
-      } catch (errorManual) {
-        console.warn('⚠️ Função manual falhou:', errorManual.message)
-        console.warn('🔄 Tentando função agendada como fallback...')
-        try {
-          // Se a função manual não existir ou falhar, tenta a agendada
-          return await tentarFuncao('processarLancamentosMensais')
-        } catch (errorAgendada) {
-          // Se ambas falharem, mostra o erro mais detalhado
-          console.error('❌ Ambas as funções falharam:')
-          console.error('   Manual:', errorManual.message)
-          console.error('   Agendada:', errorAgendada.message)
-          // Retorna o erro mais informativo
-          throw new Error(`Erro ao processar lançamentos. Função manual: ${errorManual.message}. Função agendada: ${errorAgendada.message}`)
-        }
-      }
-    } catch (error) {
-      // Se for um erro de rede ou timeout
-      if (error.name === 'TypeError' && error.message.includes('fetch')) {
-        throw new Error('Erro de conexão. Verifique sua internet ou tente novamente mais tarde.')
-      }
-      throw error
-    }
+    return response.json()
   },
 }
 

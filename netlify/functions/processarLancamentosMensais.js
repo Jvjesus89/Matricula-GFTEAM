@@ -146,16 +146,12 @@ async function processarLancamentosMensais(forcarProcessamento = false) {
     for (const aluno of alunos) {
       try {
         // Verifica se já existe um lançamento para este mês/ano e aluno
-        // Calcula o próximo mês corretamente (tratando dezembro -> janeiro do ano seguinte)
-        const proximoMes = mesAtual === 12 ? 1 : mesAtual + 1;
-        const anoProximoMes = mesAtual === 12 ? anoAtual + 1 : anoAtual;
-        
         const { data: lancamentoExistente, error: buscaError } = await supabase
           .from('financeiro')
           .select('idfinanceiro, valor, data_vencimento, data_pagamento')
           .eq('idusuario', aluno.idusuario)
           .gte('data_vencimento', `${anoAtual}-${String(mesAtual).padStart(2, '0')}-01`)
-          .lt('data_vencimento', `${anoProximoMes}-${String(proximoMes).padStart(2, '0')}-01`)
+          .lt('data_vencimento', `${anoAtual}-${String(mesAtual + 1).padStart(2, '0')}-01`)
           .maybeSingle();
 
         if (buscaError && buscaError.code !== 'PGRST116') {
@@ -272,19 +268,6 @@ async function processarLancamentosMensais(forcarProcessamento = false) {
 
 exports.handler = async function(event, context) {
   try {
-    // Verifica variáveis de ambiente no início
-    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
-      console.error('❌ Variáveis de ambiente não configuradas!');
-      return {
-        statusCode: 500,
-        headers: corsHeaders,
-        body: JSON.stringify({
-          error: 'Configuração do servidor incompleta',
-          detalhe: 'As variáveis de ambiente SUPABASE_URL e SUPABASE_ANON_KEY não estão configuradas. Configure-as no painel do Netlify.'
-        })
-      };
-    }
-
     // Tratamento para requisições OPTIONS (preflight)
     if (event.httpMethod === 'OPTIONS') {
       return {
@@ -297,15 +280,9 @@ exports.handler = async function(event, context) {
     // Se for uma chamada agendada (sem event.httpMethod)
     if (!event.httpMethod) {
       console.log('⏰ Executando como função agendada');
-      try {
-        const resultado = await processarLancamentosMensais();
-        console.log('✅ Função agendada concluída:', resultado);
-        return;
-      } catch (error) {
-        console.error('❌ Erro na função agendada:', error);
-        // Para funções agendadas, não retornamos erro HTTP, apenas logamos
-        return;
-      }
+      const resultado = await processarLancamentosMensais();
+      console.log('✅ Função agendada concluída:', resultado);
+      return;
     }
 
     // Permite GET e POST para chamadas manuais
@@ -329,14 +306,12 @@ exports.handler = async function(event, context) {
     };
   } catch (error) {
     console.error('❌ Erro não tratado no handler:', error);
-    console.error('❌ Stack trace:', error.stack);
     return {
       statusCode: 500,
       headers: corsHeaders,
       body: JSON.stringify({
         error: 'Erro ao processar lançamentos mensais',
         detalhe: error.message || 'Erro desconhecido',
-        tipo: error.name || 'Error',
         stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
       })
     };
