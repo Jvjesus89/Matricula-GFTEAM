@@ -1,11 +1,12 @@
-const { createClient } = require('@supabase/supabase-js')
 
-const supabaseUrl = process.env.SUPABASE_URL
-const supabaseKey = process.env.SUPABASE_ANON_KEY
+import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(supabaseUrl, supabaseKey)
 
-exports.handler = async function (event, context) {
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+const handler = async (event, context) => {
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
@@ -31,7 +32,7 @@ exports.handler = async function (event, context) {
     }
   }
 
-  const { usuario: nomeUsuario, idresponsavel, nome, idade, telefone, senha, perfil } = usuario
+  const { usuario: nomeUsuario, idresponsavel, nome, idade, telefone, senha, perfil, faixa, datanascimento, endereco, documento, email, nomesresponsaveis, usamedicamento } = usuario
 
   if (!nomeUsuario || !nome || !idade || !telefone || !senha || !perfil) {
     return {
@@ -82,6 +83,14 @@ exports.handler = async function (event, context) {
       telefone,
       senha,
       idperfilusuario: perfil,
+      faixa: faixa || null,
+      datanascimento: datanascimento || null,
+      endereco: endereco || null,
+      documento: documento || null,
+      email: email || null,
+      nomesresponsaveis: nomesresponsaveis || null,
+
+      usamedicamento: usamedicamento || false,
     }
 
     // Só inclui idresponsavel se foi fornecido
@@ -123,4 +132,5 @@ exports.handler = async function (event, context) {
       body: JSON.stringify({ error: 'Erro no servidor: ' + err.message }),
     }
   }
-}
+};
+export default handler;

@@ -27,7 +27,32 @@ function Alunos() {
     Telefone: '',
     Senha: '',
     perfil: '',
+    faixa: '',
+    datanascimento: '',
+    endereco: '',
+    documento: '',
+    email: '',
+    nomesresponsaveis: '',
+    usamedicamento: false,
   })
+
+  // Função para calcular idade a partir da data de nascimento
+  function calcularIdade(dataNascStr) {
+    if (!dataNascStr) return '';
+    const hoje = new Date();
+    const partes = dataNascStr.split('-');
+    if (partes.length !== 3) return '';
+    const ano = parseInt(partes[0], 10);
+    const mes = parseInt(partes[1], 10) - 1;
+    const dia = parseInt(partes[2], 10);
+    const nascimento = new Date(ano, mes, dia);
+    let idade = hoje.getFullYear() - nascimento.getFullYear();
+    const m = hoje.getMonth() - nascimento.getMonth();
+    if (m < 0 || (m === 0 && hoje.getDate() < nascimento.getDate())) {
+      idade--;
+    }
+    return idade >= 0 ? idade.toString() : '';
+  }
   const [formResponsavel, setFormResponsavel] = useState({
     nome: '',
     telefone: '',
@@ -94,6 +119,13 @@ function Alunos() {
         telefone: formData.Telefone,
         senha: formData.Senha,
         perfil: perfilId,
+        faixa: formData.faixa || null,
+        datanascimento: formData.datanascimento || null,
+        endereco: formData.endereco || null,
+        documento: formData.documento || null,
+        email: formData.email || null,
+        nomesresponsaveis: formData.nomesresponsaveis || null,
+        usamedicamento: formData.usamedicamento || false,
       }
 
       if (editingUser) {
@@ -195,6 +227,13 @@ function Alunos() {
       Telefone: user.telefone || '',
       Senha: '',
       perfil: perfilId,
+      faixa: user.faixa || '',
+      datanascimento: user.datanascimento || '',
+      endereco: user.endereco || '',
+      documento: user.documento || '',
+      email: user.email || '',
+      nomesresponsaveis: user.nomesresponsaveis || '',
+      usamedicamento: user.usamedicamento || false,
     })
     setModalOpen(true)
   }
@@ -221,6 +260,13 @@ function Alunos() {
       Telefone: '',
       Senha: '',
       perfil: '',
+      faixa: '',
+      datanascimento: '',
+      endereco: '',
+      documento: '',
+      email: '',
+      nomesresponsaveis: '',
+      usamedicamento: false,
     })
     setEditingUser(null)
   }
@@ -283,6 +329,11 @@ function Alunos() {
       sortable: true,
     },
     {
+      name: 'Faixa',
+      selector: (row) => row.faixa || '-',
+      sortable: true,
+    },
+    {
       name: 'Idade',
       selector: (row) => row.idade || '-',
       sortable: true,
@@ -290,6 +341,16 @@ function Alunos() {
     {
       name: 'Telefone',
       selector: (row) => row.telefone || '-',
+      sortable: true,
+    },
+    {
+      name: 'Documento',
+      selector: (row) => row.documento || '-',
+      sortable: true,
+    },
+    {
+      name: 'Medicamento',
+      selector: (row) => row.usamedicamento ? 'Sim' : 'Não',
       sortable: true,
     },
     {
@@ -315,8 +376,6 @@ function Alunos() {
           </div>
         ) : null,
       ignoreRowClick: true,
-      allowOverflow: true,
-      button: true,
       width: '150px', // Aumenta a largura da coluna de ações
     },
   ]
@@ -363,8 +422,6 @@ function Alunos() {
           </div>
         ) : null,
       ignoreRowClick: true,
-      allowOverflow: true,
-      button: true,
       width: '150px', // Aumenta a largura da coluna de ações
     },
   ]
@@ -452,164 +509,277 @@ function Alunos() {
               }}
               title={editingUser ? 'Editar Aluno' : 'Cadastrar Aluno'}
             >
-              <form className="container-Cadastro" id="form-aluno" onSubmit={handleSubmit}>
-                <div className="form-grupo">
-                  <label htmlFor="usuario">Usuario</label>
-                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                    <input
-                      type="text"
-                      name="usuario"
-                      autoComplete="username"
-                      value={formData.usuario}
-                      onChange={(e) => setFormData({ ...formData, usuario: e.target.value })}
-                      required
-                      style={{ flex: 1 }}
-                    />
-                    <button
-                      type="button"
-                      className="btn btn-secondary"
-                      onClick={async () => {
-                        const nomeCompleto = formData.NomeAluno
-                        if (!nomeCompleto || nomeCompleto.trim() === '') {
-                          alert('Por favor, preencha o nome do aluno primeiro')
-                          return
-                        }
-                        // Gera sugestão rápida primeiro
-                        const sugestaoRapida = generateUsernameQuick(nomeCompleto)
-                        setFormData({ ...formData, usuario: sugestaoRapida })
-                        // Depois verifica disponibilidade e gera uma melhor se necessário
-                        try {
-                          const sugestaoCompleta = await generateUsername(nomeCompleto, async (usuario) => {
-                            return await api.verificarUsuario(usuario)
-                          })
-                          if (sugestaoCompleta !== sugestaoRapida) {
-                            setFormData({ ...formData, usuario: sugestaoCompleta })
-                          }
-                        } catch (error) {
-                          console.error('Erro ao gerar sugestão completa:', error)
-                          // Mantém a sugestão rápida se der erro
-                        }
-                      }}
-                      style={{ whiteSpace: 'nowrap', height: '38px', padding: '8px 16px' }}
-                      title="Gerar sugestão de usuário baseado no nome"
-                    >
-                      ✨ Gerar
-                    </button>
-                  </div>
+              <form className="container-Cadastro form-cadastro-duas-colunas" id="form-aluno" onSubmit={handleSubmit}>
+                <div className="form-grupo form-grupo-duas-colunas">
 
-                  <label htmlFor="idresponsavel" style={{ textTransform: 'uppercase', fontWeight: 'bold', color: '#333' }}>
-                    Responsável
-                  </label>
-                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                    <select
-                      name="idresponsavel"
-                      id="idresponsavel"
-                      value={formData.idresponsavel}
-                      onChange={(e) => setFormData({ ...formData, idresponsavel: e.target.value })}
-                      style={{ 
-                        flex: 1, 
-                        height: '38px',
-                        minWidth: '200px',
-                        borderRadius: '8px',
-                        padding: '8px 16px',
-                        border: '2px solid #e0e0e0',
-                        fontSize: '15px',
-                        backgroundColor: '#ffffff',
-                        color: '#333',
-                        cursor: 'pointer',
-                        transition: 'border-color 0.3s ease, box-shadow 0.3s ease'
-                      }}
-                      >
-                      <option value="">Selecione um responsável</option>
-                      {responsaveis.map((resp, index) => (
-                        <option 
-                          key={resp.idresponsavel || `resp-${index}`} 
-                          value={resp.idresponsavel}
-                          title={`${resp.nome} ${resp.telefone ? `(${resp.telefone})` : ''}`}
+                  <div className="duas-colunas">
+                    <div className="coluna">
+                      <label htmlFor="usuario">Usuario</label>
+                      <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                        <input
+                          type="text"
+                          name="usuario"
+                          autoComplete="username"
+                          value={formData.usuario}
+                          onChange={(e) => setFormData({ ...formData, usuario: e.target.value })}
+                          required
+                          style={{ flex: 1 }}
+                        />
+                        <button
+                          type="button"
+                          className="btn btn-secondary"
+                          onClick={async () => {
+                            const nomeCompleto = formData.NomeAluno
+                            if (!nomeCompleto || nomeCompleto.trim() === '') {
+                              alert('Por favor, preencha o nome do aluno primeiro')
+                              return
+                            }
+                            // Gera sugestão rápida primeiro
+                            const sugestaoRapida = generateUsernameQuick(nomeCompleto)
+                            setFormData({ ...formData, usuario: sugestaoRapida })
+                            // Depois verifica disponibilidade e gera uma melhor se necessário
+                            try {
+                              const sugestaoCompleta = await generateUsername(nomeCompleto, async (usuario) => {
+                                return await api.verificarUsuario(usuario)
+                              })
+                              if (sugestaoCompleta !== sugestaoRapida) {
+                                setFormData({ ...formData, usuario: sugestaoCompleta })
+                              }
+                            } catch (error) {
+                              console.error('Erro ao gerar sugestão completa:', error)
+                              // Mantém a sugestão rápida se der erro
+                            }
+                          }}
+                          style={{ whiteSpace: 'nowrap', height: '38px', padding: '8px 16px' }}
+                          title="Gerar sugestão de usuário baseado no nome"
                         >
-                          {resp.nome} {resp.telefone ? `(${resp.telefone})` : ''}
-                        </option>
-                      ))}
-                    </select>
-                    {isAdmin() && (
-                      <button
-                        type="button"
-                        className="btn btn-secondary"
-                        onClick={handleOpenModalResponsavel}
-                        style={{ 
-                          whiteSpace: 'nowrap', 
-                          height: '38px', 
-                          padding: '8px 16px',
-                          borderRadius: '8px',
-                          backgroundColor: '#f5f5f5',
-                          border: '1px solid #e0e0e0',
-                          color: '#333',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '5px',
-                          fontWeight: '500'
-                        }}
-                      >
-                        <span style={{ color: '#6f42c1', fontSize: '18px' }}>➕</span> Novo
-                      </button>
-                    )}
+                          ✨ Gerar
+                        </button>
+                      </div>
+                    </div>
+                    <div className="coluna">
+                      <label htmlFor="idresponsavel" style={{ textTransform: 'uppercase', fontWeight: 'bold', color: '#333' }}>
+                        Responsável
+                      </label>
+                      <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                        <select
+                          name="idresponsavel"
+                          id="idresponsavel"
+                          value={formData.idresponsavel}
+                          onChange={(e) => setFormData({ ...formData, idresponsavel: e.target.value })}
+                          style={{ 
+                            flex: 1, 
+                            height: '38px',
+                            minWidth: '200px',
+                            borderRadius: '8px',
+                            padding: '8px 16px',
+                            border: '2px solid #e0e0e0',
+                            fontSize: '15px',
+                            backgroundColor: '#ffffff',
+                            color: '#333',
+                            cursor: 'pointer',
+                            transition: 'border-color 0.3s ease, box-shadow 0.3s ease'
+                          }}
+                        >
+                          <option value="">Selecione um responsável</option>
+                          {responsaveis.map((resp, index) => (
+                            <option 
+                              key={resp.idresponsavel || `resp-${index}`} 
+                              value={resp.idresponsavel}
+                              title={`${resp.nome} ${resp.telefone ? `(${resp.telefone})` : ''}`}
+                            >
+                              {resp.nome} {resp.telefone ? `(${resp.telefone})` : ''}
+                            </option>
+                          ))}
+                        </select>
+                        {isAdmin() && (
+                          <button
+                            type="button"
+                            className="btn btn-secondary"
+                            onClick={handleOpenModalResponsavel}
+                            style={{ 
+                              whiteSpace: 'nowrap', 
+                              height: '38px', 
+                              padding: '8px 16px',
+                              borderRadius: '8px',
+                              backgroundColor: '#f5f5f5',
+                              border: '1px solid #e0e0e0',
+                              color: '#333',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '5px',
+                              fontWeight: '500'
+                            }}
+                          >
+                            <span style={{ color: '#6f42c1', fontSize: '18px' }}>➕</span> Novo
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   </div>
 
-                  <label htmlFor="NomeAluno">Nome Aluno</label>
+
+                  <div className="duas-colunas">
+                    <div className="coluna">
+                      <label htmlFor="NomeAluno">Nome Aluno</label>
+                      <input
+                        type="text"
+                        name="NomeAluno"
+                        autoComplete="name"
+                        value={formData.NomeAluno}
+                        onChange={(e) => setFormData({ ...formData, NomeAluno: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div className="coluna">
+                      <label htmlFor="faixa">Faixa</label>
+                      <select
+                        name="faixa"
+                        id="faixa"
+                        value={formData.faixa}
+                        onChange={(e) => setFormData({ ...formData, faixa: e.target.value })}
+                      >
+                        <option value="">Selecione uma faixa</option>
+                        <option value="Adulto">Adulto</option>
+                        <option value="Kids">Kids</option>
+                        <option value="Iniciantes">Iniciantes</option>
+                        <option value="Juvenil">Juvenil</option>
+                      </select>
+                    </div>
+                  </div>
+
+
+                  <div className="duas-colunas">
+                    <div className="coluna">
+                      <label htmlFor="datanascimento">Data de Nascimento</label>
+                      <input
+                        type="date"
+                        name="datanascimento"
+                        value={formData.datanascimento}
+                        onChange={(e) => {
+                          const novaData = e.target.value;
+                          setFormData((prev) => ({
+                            ...prev,
+                            datanascimento: novaData,
+                            Idade: calcularIdade(novaData)
+                          }));
+                        }}
+                      />
+                    </div>
+                    <div className="coluna">
+                      <label htmlFor="Idade">Idade</label>
+                      <input
+                        type="number"
+                        name="Idade"
+                        autoComplete="age"
+                        value={formData.Idade}
+                        onChange={(e) => setFormData({ ...formData, Idade: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="duas-colunas">
+                    <div className="coluna">
+                      <label htmlFor="endereco">Endereço</label>
+                      <input
+                        type="text"
+                        name="endereco"
+                        value={formData.endereco}
+                        onChange={(e) => setFormData({ ...formData, endereco: e.target.value })}
+                      />
+                    </div>
+                    <div className="coluna">
+                      <label htmlFor="Telefone">Telefone</label>
+                      <input
+                        type="text"
+                        name="Telefone"
+                        maxLength={15}
+                        placeholder="(99) 99999-9999"
+                        autoComplete="tel"
+                        value={formData.Telefone}
+                        onChange={(e) => setFormData({ ...formData, Telefone: formatPhone(e.target.value) })}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="duas-colunas">
+                    <div className="coluna">
+                      <label htmlFor="documento">Documento (CPF)</label>
+                      <input
+                        type="text"
+                        name="documento"
+                        placeholder="000.000.000-00"
+                        value={formData.documento}
+                        onChange={(e) => setFormData({ ...formData, documento: e.target.value })}
+                      />
+                    </div>
+                    <div className="coluna">
+                      <label htmlFor="email">E-mail</label>
+                      <input
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+
+                  {!editingUser && (
+                    <>
+                      <label htmlFor="Senha">Senha</label>
+                      <input
+                        type="password"
+                        name="Senha"
+                        autoComplete="current-password"
+                        value={formData.Senha}
+                        onChange={(e) => setFormData({ ...formData, Senha: e.target.value })}
+                        required
+                      />
+                    </>
+                  )}
+
+                  <label htmlFor="nomesresponsaveis">Nome dos Responsáveis</label>
                   <input
                     type="text"
-                    name="NomeAluno"
-                    autoComplete="name"
-                    value={formData.NomeAluno}
-                    onChange={(e) => setFormData({ ...formData, NomeAluno: e.target.value })}
-                    required
+                    name="nomesresponsaveis"
+                    value={formData.nomesresponsaveis}
+                    onChange={(e) => setFormData({ ...formData, nomesresponsaveis: e.target.value })}
                   />
 
-                  <label htmlFor="Idade">Idade</label>
-                  <input
-                    type="number"
-                    name="Idade"
-                    autoComplete="age"
-                    value={formData.Idade}
-                    onChange={(e) => setFormData({ ...formData, Idade: e.target.value })}
-                  />
 
-                  <label htmlFor="Telefone">Telefone</label>
-                  <input
-                    type="text"
-                    name="Telefone"
-                    maxLength={15}
-                    placeholder="(99) 99999-9999"
-                    autoComplete="tel"
-                    value={formData.Telefone}
-                    onChange={(e) => setFormData({ ...formData, Telefone: formatPhone(e.target.value) })}
-                  />
-
-                  <label htmlFor="Senha">Senha</label>
-                  <input
-                    type="password"
-                    name="Senha"
-                    autoComplete="current-password"
-                    value={formData.Senha}
-                    onChange={(e) => setFormData({ ...formData, Senha: e.target.value })}
-                    required={!editingUser}
-                  />
-
-                  <label htmlFor="perfil">Perfil</label>
-                  <select
-                    name="perfil"
-                    id="perfil"
-                    required
-                    value={formData.perfil}
-                    onChange={(e) => setFormData({ ...formData, perfil: e.target.value })}
-                  >
-                    <option value="">Selecione um perfil</option>
-                    {perfis.map((perfil) => (
-                      <option key={perfil.idperfilusuario} value={perfil.idperfilusuario}>
-                        {perfil.perfil}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="duas-colunas">
+                    <div className="coluna" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <label htmlFor="usamedicamento" style={{ marginbutton: 100, fontWeight: 500 }}>
+                        Faz uso de algum medicamento
+                      </label>
+                      <input
+                        type="checkbox"
+                        name="usamedicamento"
+                        checked={formData.usamedicamento}
+                        onChange={(e) => setFormData({ ...formData, usamedicamento: e.target.checked })}
+                        id="usamedicamento"
+                        style={{ marginRight: '8px' }}
+                      />
+                    </div>
+                    <div className="coluna">
+                      <label htmlFor="perfil">Perfil</label>
+                      <select
+                        name="perfil"
+                        id="perfil"
+                        required
+                        value={formData.perfil}
+                        onChange={(e) => setFormData({ ...formData, perfil: e.target.value })}
+                      >
+                        <option value="">Selecione um perfil</option>
+                        {perfis.map((perfil) => (
+                          <option key={perfil.idperfilusuario} value={perfil.idperfilusuario}>
+                            {perfil.perfil}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
 
                   <div style={{ display: 'flex', justifyContent: 'center' }}>
                     <input className="botao" type="submit" value={editingUser ? 'Atualizar' : 'Cadastrar'} />
@@ -734,7 +904,6 @@ function Alunos() {
                           }
                         } catch (error) {
                           console.error('Erro ao gerar sugestão completa:', error)
-                          // Mantém a sugestão rápida se der erro
                         }
                       }}
                       style={{ whiteSpace: 'nowrap', height: '38px', padding: '8px 16px' }}

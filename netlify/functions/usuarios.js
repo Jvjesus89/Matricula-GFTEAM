@@ -1,4 +1,4 @@
-const { createClient } = require('@supabase/supabase-js');
+import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_ANON_KEY;
@@ -26,7 +26,7 @@ if (supabaseUrl && supabaseKey) {
   }
 }
 
-exports.handler = async function(event, context) {
+const handler = async (event, context) => {
   // CORS headers
   const headers = {
     'Access-Control-Allow-Origin': '*',
@@ -42,7 +42,8 @@ exports.handler = async function(event, context) {
       headers,
       body: '',
     };
-  }
+  };
+  export default handler;
 
   if (event.httpMethod !== 'POST') {
     return {

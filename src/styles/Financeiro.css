@@ -1,2 +1,6 @@
-/* Estilos específicos do Financeiro já estão no stylepadrao.css */
+
+.nav-tabs.sub-menu {
+	width: 1000px;
+	margin: 20px auto;
+}
 

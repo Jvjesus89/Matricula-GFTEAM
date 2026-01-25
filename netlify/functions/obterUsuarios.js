@@ -1,11 +1,11 @@
-const { createClient } = require('@supabase/supabase-js')
+import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = process.env.SUPABASE_URL
 const supabaseKey = process.env.SUPABASE_ANON_KEY
 
 const supabase = createClient(supabaseUrl, supabaseKey)
 
-exports.handler = async function (event, context) {
+export const handler = async (event, context) => {
   if (event.httpMethod !== 'GET') {
     return {
       statusCode: 405,
@@ -29,6 +29,13 @@ exports.handler = async function (event, context) {
         telefone,
         idperfilusuario,
         idresponsavel,
+        faixa,
+        datanascimento,
+        endereco,
+        documento,
+        email,
+        nomesresponsaveis,
+        usamedicamento,
         usuario_perfil (
           idperfilusuario,
           perfil,

@@ -1,4 +1,4 @@
-const { createClient } = require('@supabase/supabase-js');
+import { createClient } from '@supabase/supabase-js';
 
 // Configuração do Supabase
 const supabaseUrl = process.env.SUPABASE_URL;
@@ -13,7 +13,7 @@ const corsHeaders = {
   'Content-Type': 'application/json'
 };
 
-exports.handler = async function(event, context) {
+const handler = async (event, context) => {
   // Tratamento para requisições OPTIONS (preflight)
   if (event.httpMethod === 'OPTIONS') {
     return {
@@ -21,7 +21,8 @@ exports.handler = async function(event, context) {
       headers: corsHeaders,
       body: ''
     };
-  }
+  };
+  export default handler;
 
   // Verifica se o método é POST
   if (event.httpMethod !== 'POST') {

@@ -70,56 +70,10 @@ function Configuracoes() {
     try {
       setLoadingConfig(true)
       const resultado = await api.processarLancamentosMensais()
-      
-      // Monta mensagem detalhada
-      let mensagem = `Processamento concluído!\n\n`
-      mensagem += `Criados: ${resultado.total_criados || 0}\n`
-      mensagem += `Atualizados: ${resultado.total_atualizados || 0}\n`
-      mensagem += `Erros: ${resultado.total_erros || 0}\n`
-      mensagem += `Ignorados: ${resultado.total_ignorados || 0}\n`
-      
-      // Se houver erros, mostra detalhes
-      if (resultado.total_erros > 0 && resultado.resultados) {
-        const erros = resultado.resultados.filter(r => r.acao === 'Erro')
-        if (erros.length > 0) {
-          mensagem += `\n\nErros encontrados:\n`
-          erros.slice(0, 5).forEach((erro, idx) => {
-            mensagem += `${idx + 1}. ${erro.aluno}: ${erro.erro}\n`
-          })
-          if (erros.length > 5) {
-            mensagem += `... e mais ${erros.length - 5} erro(s)\n`
-          }
-          mensagem += `\nVerifique o console para mais detalhes.`
-        }
-      }
-      
-      alert(mensagem)
-      
-      // Log detalhado no console
-      if (resultado.total_erros > 0) {
-        const erros = resultado.resultados.filter(r => r.acao === 'Erro')
-        console.error('📋 Detalhes dos erros:', erros)
-        console.table(erros.map(e => ({
-          Aluno: e.aluno,
-          Erro: e.erro,
-          Detalhes: e.detalhes || '-',
-          ID: e.idusuario || '-'
-        })))
-        
-        // Log individual de cada erro para facilitar debug
-        erros.forEach((erro, idx) => {
-          console.error(`\n❌ Erro ${idx + 1}/${erros.length}:`)
-          console.error(`   Aluno: ${erro.aluno}`)
-          console.error(`   ID: ${erro.idusuario || 'N/A'}`)
-          console.error(`   Mensagem: ${erro.erro}`)
-          if (erro.detalhes) {
-            console.error(`   Detalhes: ${erro.detalhes}`)
-          }
-        })
-      }
+      alert(`Processamento concluído!\n\nCriados: ${resultado.total_criados || 0}\nAtualizados: ${resultado.total_atualizados || 0}\nErros: ${resultado.total_erros || 0}`)
     } catch (error) {
       console.error('Erro ao processar lançamentos:', error)
-      alert(`Erro ao processar lançamentos:\n\n${error.message || 'Erro desconhecido'}\n\nVerifique o console para mais detalhes.`)
+      alert(error.message || 'Erro ao processar lançamentos')
     } finally {
       setLoadingConfig(false)
     }

@@ -1,2 +1,18 @@
-/* Estilos específicos do Header já estão no stylepadrao.css */
+
+header {
+	background-color: #ffffff;
+	padding: 25px 0 0;
+	box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+	margin-bottom: 0;
+}
+
+header img {
+	transition: transform 0.3s ease;
+	display: block;
+	margin: 0 auto 20px;
+}
+
+header img:hover {
+	transform: scale(1.05);
+}
 

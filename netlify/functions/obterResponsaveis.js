@@ -1,29 +1,22 @@
-const { createClient } = require('@supabase/supabase-js')
+import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.SUPABASE_URL
-const supabaseKey = process.env.SUPABASE_ANON_KEY
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
-const supabase = createClient(supabaseUrl, supabaseKey)
-
-exports.handler = async function (event, context) {
-  if (event.httpMethod !== 'GET') {
-    return {
-      statusCode: 405,
+export default async (request, context) => {
+  if (request.method && request.method !== 'GET') {
+    return new Response(JSON.stringify({ error: 'Método não permitido' }), {
+      status: 405,
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ error: 'Método não permitido' }),
-    }
+    });
   }
-
   try {
-    // Tenta buscar da tabela responsaveis primeiro (se existir)
-    // Se não existir, busca valores únicos do campo responsavel na tabela usuarios
-    let data = []
-    let error = null
-
-    // Tenta buscar da tabela responsaveis
+    let data = [];
+    let error = null;
     const { data: responsaveisData, error: responsaveisError } = await supabase
       .from('responsaveis')
       .select(`
@@ -39,10 +32,8 @@ exports.handler = async function (event, context) {
           isadministrador
         )
       `)
-      .order('nome', { ascending: true })
-
+      .order('nome', { ascending: true });
     if (!responsaveisError && responsaveisData) {
-      // Se a tabela responsaveis existe, usa ela
       data = responsaveisData.map((r) => ({
         idresponsavel: r.idresponsavel,
         nome: r.nome,
@@ -51,62 +42,53 @@ exports.handler = async function (event, context) {
         usuario: r.usuario || null,
         idperfilusuario: r.idperfilusuario || null,
         usuario_perfil: r.usuario_perfil || null,
-      }))
+      }));
     } else {
-      // Se não existe, busca valores únicos do campo responsavel na tabela usuarios
       const { data: usuariosData, error: usuariosError } = await supabase
         .from('usuarios')
         .select('responsavel, telefone')
         .not('responsavel', 'is', null)
-        .neq('responsavel', '')
-
+        .neq('responsavel', '');
       if (usuariosError) {
-        error = usuariosError
+        error = usuariosError;
       } else {
-        // Agrupa por responsavel único
-        const responsaveisUnicos = {}
+        const responsaveisUnicos = {};
         usuariosData.forEach((item) => {
           if (item.responsavel && !responsaveisUnicos[item.responsavel]) {
             responsaveisUnicos[item.responsavel] = {
               nome: item.responsavel,
               telefone: item.telefone || null,
               email: null,
-            }
+            };
           }
-        })
-        data = Object.values(responsaveisUnicos)
+        });
+        data = Object.values(responsaveisUnicos);
       }
     }
-
     if (error) {
-      return {
-        statusCode: 500,
+      return new Response(JSON.stringify({ error: error.message }), {
+        status: 500,
         headers: {
           'Access-Control-Allow-Origin': '*',
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ error: error.message }),
-      }
+      });
     }
-
-    const responsaveis = data
-
-    return {
-      statusCode: 200,
+    const responsaveis = data;
+    return new Response(JSON.stringify(responsaveis), {
+      status: 200,
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(responsaveis),
-    }
+    });
   } catch (err) {
-    return {
-      statusCode: 500,
+    return new Response(JSON.stringify({ error: 'Erro no servidor: ' + err.message }), {
+      status: 500,
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ error: 'Erro no servidor: ' + err.message }),
-    }
+    });
   }
-}
+};

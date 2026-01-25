@@ -1,13 +1,9 @@
-const { createClient } = require('@supabase/supabase-js');
+import { createClient } from '@supabase/supabase-js';
 
+// Inicialização do Supabase
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_ANON_KEY;
-
-if (!supabaseUrl || !supabaseKey) {
-  console.error('Variáveis de ambiente SUPABASE_URL e SUPABASE_ANON_KEY não configuradas!');
-}
-
-const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Headers padrão para CORS
 const corsHeaders = {
@@ -17,329 +13,120 @@ const corsHeaders = {
   'Content-Type': 'application/json'
 };
 
+// Função auxiliar de processamento (Lógica de Negócio)
 async function processarLancamentosMensais(forcarProcessamento = false) {
   console.log('🔄 Iniciando processamento de lançamentos mensais...');
 
   try {
-    if (!supabase) {
-      throw new Error('Configuração do banco de dados não encontrada');
-    }
-
     const hoje = new Date();
     const diaAtual = hoje.getDate();
     const mesAtual = hoje.getMonth() + 1;
     const anoAtual = hoje.getFullYear();
 
-    // Se não for forçado e não for dia 01, verifica se já foi processado este mês
-    // Mas permite processar nos primeiros 5 dias do mês como backup
+    // Verificação de segurança para não duplicar mensalidades
     if (!forcarProcessamento && diaAtual > 5) {
-      // Após o dia 5, verifica se já existe lançamento antes de processar
       const primeiroDiaMes = `${anoAtual}-${String(mesAtual).padStart(2, '0')}-01`;
       const ultimoDiaMes = `${anoAtual}-${String(mesAtual).padStart(2, '0')}-31`;
       
-      const { data: lancamentosExistentes, error: verificaError } = await supabase
+      const { data: lancamentosExistentes } = await supabase
         .from('financeiro')
         .select('idusuario')
         .gte('data_vencimento', primeiroDiaMes)
         .lte('data_vencimento', ultimoDiaMes)
         .limit(1);
 
-      if (verificaError && verificaError.code !== 'PGRST116') {
-        console.error('❌ Erro ao verificar lançamentos existentes:', verificaError);
-        // Continua o processamento mesmo com erro na verificação
-      } else if (lancamentosExistentes && lancamentosExistentes.length > 0) {
-        console.log(`⏭️ Já existem lançamentos para o mês ${mesAtual}/${anoAtual}. Processamento ignorado.`);
-        console.log(`💡 Para forçar o processamento, use o botão manual ou aguarde o dia 01 do próximo mês.`);
+      if (lancamentosExistentes && lancamentosExistentes.length > 0) {
         return {
-          message: 'Lançamentos já foram criados para este mês',
-          mes: mesAtual,
-          ano: anoAtual,
-          dia_atual: diaAtual,
-          pode_forcar: true
+          message: 'Lançamentos já existem para este mês',
+          ignorado: true
         };
-      } else {
-        console.log(`⚠️ Não é dia 01, mas não foram encontrados lançamentos para o mês ${mesAtual}/${anoAtual}.`);
-        console.log(`🔄 Continuando o processamento para criar os lançamentos faltantes...`);
-      }
-    } else if (!forcarProcessamento && diaAtual >= 1 && diaAtual <= 5) {
-      // Nos primeiros 5 dias do mês, verifica se existem lançamentos mas permite criar se não existirem
-      console.log(`📅 Executando nos primeiros dias do mês (dia ${diaAtual}). Verificando se é necessário criar lançamentos...`);
-      
-      // Verifica se já existem lançamentos, mas não bloqueia o processamento
-      const primeiroDiaMes = `${anoAtual}-${String(mesAtual).padStart(2, '0')}-01`;
-      const ultimoDiaMes = `${anoAtual}-${String(mesAtual).padStart(2, '0')}-31`;
-      
-      const { data: lancamentosExistentes, error: verificaError } = await supabase
-        .from('financeiro')
-        .select('idusuario')
-        .gte('data_vencimento', primeiroDiaMes)
-        .lte('data_vencimento', ultimoDiaMes)
-        .limit(1);
-
-      if (verificaError && verificaError.code !== 'PGRST116') {
-        console.error('❌ Erro ao verificar lançamentos existentes:', verificaError);
-        // Continua o processamento mesmo com erro na verificação
-      } else if (lancamentosExistentes && lancamentosExistentes.length > 0) {
-        console.log(`✅ Já existem lançamentos para o mês ${mesAtual}/${anoAtual}. A função processará apenas os alunos que ainda não têm lançamento.`);
-        // Não retorna aqui, permite que a função continue para processar alunos que ainda não têm lançamento
-      } else {
-        console.log(`🔄 Não foram encontrados lançamentos para o mês ${mesAtual}/${anoAtual}. Criando lançamentos...`);
       }
     }
 
-    // Busca as configurações
-    const { data: config, error: configError } = await supabase
-      .from('configuracoes')
-      .select('*')
-      .limit(1)
-      .maybeSingle();
+    // Busca configurações de valores
+    const { data: config } = await supabase.from('configuracoes').select('*').maybeSingle();
+    if (!config) throw new Error('Configurações financeiras não encontradas.');
 
-    if (configError && configError.code !== 'PGRST116') {
-      throw new Error(`Erro ao buscar configurações: ${configError.message}`);
-    }
+    const valorAteVencimento = parseFloat(config.valor_ate_vencimento);
+    const valorAposVencimento = parseFloat(config.valor_apos_vencimento);
 
-    if (!config) {
-      throw new Error('Configurações não encontradas. Configure os valores primeiro.');
-    }
+    // Data de vencimento padrão: Dia 10 do mês atual
+    const dataVencimentoISO = new Date(anoAtual, mesAtual - 1, 10).toISOString().split('T')[0];
 
-    const valorAteVencimento = parseFloat(config.valor_ate_vencimento) || 0;
-    const valorAposVencimento = parseFloat(config.valor_apos_vencimento) || 0;
-
-    if (valorAteVencimento === 0 && valorAposVencimento === 0) {
-      throw new Error('Valores de pagamento não configurados.');
-    }
-
-    console.log('📊 Configurações encontradas:', {
-      valor_ate_vencimento: valorAteVencimento,
-      valor_apos_vencimento: valorAposVencimento
-    });
-
-    // Calcula a data de vencimento (dia 10 do mês atual)
-    const dataVencimento = new Date(anoAtual, mesAtual - 1, 10);
-    const dataVencimentoISO = dataVencimento.toISOString().split('T')[0];
-
-    // Busca todos os alunos ativos
+    // Busca alunos ativos (perfil 2)
     const { data: alunos, error: alunosError } = await supabase
       .from('usuarios')
-      .select('idusuario, nome, usuario')
-      .eq('idperfilusuario', 2); // Assumindo que 2 é o ID do perfil de aluno
+      .select('idusuario, nome')
+      .eq('idperfilusuario', 2);
 
-    if (alunosError) {
-      throw new Error(`Erro ao buscar alunos: ${alunosError.message}`);
-    }
+    if (alunosError) throw alunosError;
 
-    if (!alunos || alunos.length === 0) {
-      console.log('ℹ️ Nenhum aluno encontrado.');
-      return {
-        message: 'Nenhum aluno encontrado para processar',
-        total_processados: 0
-      };
-    }
-
-    console.log(`📋 ${alunos.length} alunos encontrados.`);
-
-    const resultados = [];
-    let totalCriados = 0;
-    let totalAtualizados = 0;
-    let totalErros = 0;
+    let criados = 0;
+    let atualizados = 0;
 
     for (const aluno of alunos) {
-      try {
-        // Verifica se já existe um lançamento para este mês/ano e aluno
-        // Calcula o próximo mês corretamente (tratando dezembro -> janeiro do ano seguinte)
-        const proximoMes = mesAtual === 12 ? 1 : mesAtual + 1;
-        const anoProximoMes = mesAtual === 12 ? anoAtual + 1 : anoAtual;
-        
-        const { data: lancamentoExistente, error: buscaError } = await supabase
-          .from('financeiro')
-          .select('idfinanceiro, valor, data_vencimento, data_pagamento')
-          .eq('idusuario', aluno.idusuario)
-          .gte('data_vencimento', `${anoAtual}-${String(mesAtual).padStart(2, '0')}-01`)
-          .lt('data_vencimento', `${anoProximoMes}-${String(proximoMes).padStart(2, '0')}-01`)
-          .maybeSingle();
+      // Verifica se o aluno já tem boleto este mês
+      const { data: existe } = await supabase
+        .from('financeiro')
+        .select('idfinanceiro, valor')
+        .eq('idusuario', aluno.idusuario)
+        .gte('data_vencimento', `${anoAtual}-${String(mesAtual).padStart(2, '0')}-01`)
+        .maybeSingle();
 
-        if (buscaError && buscaError.code !== 'PGRST116') {
-          throw new Error(`Erro ao buscar lançamento: ${buscaError.message}`);
+      const valorFinal = (hoje.getDate() > 10) ? valorAposVencimento : valorAteVencimento;
+
+      if (existe) {
+        if (parseFloat(existe.valor) !== valorFinal) {
+          await supabase.from('financeiro').update({ valor: valorFinal }).eq('idfinanceiro', existe.idfinanceiro);
+          atualizados++;
         }
-
-        // Determina o valor baseado na data de vencimento
-        const hojeParaComparacao = new Date(anoAtual, mesAtual - 1, diaAtual);
-        hojeParaComparacao.setHours(0, 0, 0, 0);
-        
-        let valor;
-        if (hojeParaComparacao > dataVencimento) {
-          // Já passou do vencimento, usa valor após vencimento
-          valor = valorAposVencimento;
-          console.log(`💰 Aluno ${aluno.nome}: Usando valor após vencimento (R$ ${valor.toFixed(2)})`);
-        } else {
-          // Ainda não passou do vencimento, usa valor até vencimento
-          valor = valorAteVencimento;
-          console.log(`💰 Aluno ${aluno.nome}: Usando valor até vencimento (R$ ${valor.toFixed(2)})`);
-        }
-
-        if (lancamentoExistente) {
-          // Atualiza o lançamento existente se o valor mudou ou se passou do vencimento
-          const valorMudou = parseFloat(lancamentoExistente.valor) !== valor;
-          const passouVencimento = hojeParaComparacao > dataVencimento && 
-                                   parseFloat(lancamentoExistente.valor) === valorAteVencimento;
-
-          if (valorMudou || passouVencimento) {
-            const { error: updateError } = await supabase
-              .from('financeiro')
-              .update({
-                valor: valor,
-                data_vencimento: dataVencimentoISO
-              })
-              .eq('idfinanceiro', lancamentoExistente.idfinanceiro);
-
-            if (updateError) {
-              throw new Error(`Erro ao atualizar: ${updateError.message}`);
-            }
-
-            totalAtualizados++;
-            resultados.push({
-              aluno: aluno.nome,
-              acao: 'Atualizado',
-              valor: valor,
-              motivo: passouVencimento ? 'Vencimento passou' : 'Valor alterado'
-            });
-            console.log(`✅ Lançamento atualizado para ${aluno.nome}`);
-          } else {
-            console.log(`⏭️ Lançamento de ${aluno.nome} já está correto. Pulando...`);
-            resultados.push({
-              aluno: aluno.nome,
-              acao: 'Ignorado',
-              motivo: 'Já está correto'
-            });
-          }
-        } else {
-          // Cria novo lançamento
-          const { error: insertError } = await supabase
-            .from('financeiro')
-            .insert([{
-              idusuario: aluno.idusuario,
-              valor: valor,
-              data_vencimento: dataVencimentoISO,
-              data_pagamento: null
-            }]);
-
-          if (insertError) {
-            throw new Error(`Erro ao criar: ${insertError.message}`);
-          }
-
-          totalCriados++;
-          resultados.push({
-            aluno: aluno.nome,
-            acao: 'Criado',
-            valor: valor
-          });
-          console.log(`✅ Novo lançamento criado para ${aluno.nome}`);
-        }
-      } catch (error) {
-        console.error(`❌ Erro ao processar aluno ${aluno.nome}:`, error);
-        totalErros++;
-        resultados.push({
-          aluno: aluno.nome,
-          acao: 'Erro',
-          erro: error.message
-        });
+      } else {
+        await supabase.from('financeiro').insert([{
+          idusuario: aluno.idusuario,
+          valor: valorFinal,
+          data_vencimento: dataVencimentoISO
+        }]);
+        criados++;
       }
     }
 
-    const response = {
-      message: 'Processamento de lançamentos mensais concluído',
-      data_processamento: hoje.toISOString().split('T')[0],
-      mes_processado: `${mesAtual}/${anoAtual}`,
-      total_alunos: alunos.length,
-      total_criados: totalCriados,
-      total_atualizados: totalAtualizados,
-      total_erros: totalErros,
-      total_ignorados: alunos.length - totalCriados - totalAtualizados - totalErros,
-      resultados
-    };
-
-    console.log('📊 Resumo do processamento:', response);
-    return response;
+    return { total_alunos: alunos.length, criados, atualizados };
 
   } catch (error) {
-    console.error('❌ Erro geral no processamento:', error);
-    return {
-      error: 'Erro ao processar lançamentos mensais',
-      detalhe: error.message
-    };
+    throw error;
   }
 }
 
-exports.handler = async function(event, context) {
+// Handler Principal (Padrão V2 ESM)
+export default async (request, context) => {
+  
+  // 1. Tratamento de CORS
+  if (request.method === 'OPTIONS') {
+    return new Response(null, { status: 204, headers: corsHeaders });
+  }
+
   try {
-    // Verifica variáveis de ambiente no início
-    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
-      console.error('❌ Variáveis de ambiente não configuradas!');
-      return {
-        statusCode: 500,
-        headers: corsHeaders,
-        body: JSON.stringify({
-          error: 'Configuração do servidor incompleta',
-          detalhe: 'As variáveis de ambiente SUPABASE_URL e SUPABASE_ANON_KEY não estão configuradas. Configure-as no painel do Netlify.'
-        })
-      };
-    }
+    // 2. Identifica a origem da chamada
+    // Se não houver um User-Agent comum, provavelmente é o Cron do Supabase
+    const isCron = request.headers.get('user-agent')?.includes('PostgREST') || !request.headers.get('user-agent');
+    
+    console.log(isCron ? '⏰ Gatilho: Agendamento (Cron)' : '🌐 Gatilho: Chamada Manual (HTTP)');
 
-    // Tratamento para requisições OPTIONS (preflight)
-    if (event.httpMethod === 'OPTIONS') {
-      return {
-        statusCode: 200,
-        headers: corsHeaders,
-        body: ''
-      };
-    }
+    // 3. Executa a lógica
+    // Se for manual (GET/POST), forçamos o processamento. Se for Cron, respeita a trava de segurança.
+    const forcar = request.method === 'POST' || request.method === 'GET';
+    const resultado = await processarLancamentosMensais(forcar);
 
-    // Se for uma chamada agendada (sem event.httpMethod)
-    if (!event.httpMethod) {
-      console.log('⏰ Executando como função agendada');
-      try {
-        const resultado = await processarLancamentosMensais();
-        console.log('✅ Função agendada concluída:', resultado);
-        return;
-      } catch (error) {
-        console.error('❌ Erro na função agendada:', error);
-        // Para funções agendadas, não retornamos erro HTTP, apenas logamos
-        return;
-      }
-    }
+    return new Response(JSON.stringify(resultado), {
+      status: 200,
+      headers: corsHeaders
+    });
 
-    // Permite GET e POST para chamadas manuais
-    if (event.httpMethod !== 'GET' && event.httpMethod !== 'POST') {
-      return {
-        statusCode: 405,
-        headers: corsHeaders,
-        body: JSON.stringify({ error: 'Método não permitido' })
-      };
-    }
-
-    // Se for uma chamada HTTP normal (manual), força o processamento
-    console.log('🌐 Executando como função HTTP (forçado)');
-    const resultado = await processarLancamentosMensais(true);
-    console.log('✅ Função HTTP concluída:', resultado);
-
-    return {
-      statusCode: resultado.error ? 500 : 200,
-      headers: corsHeaders,
-      body: JSON.stringify(resultado)
-    };
   } catch (error) {
-    console.error('❌ Erro não tratado no handler:', error);
-    console.error('❌ Stack trace:', error.stack);
-    return {
-      statusCode: 500,
-      headers: corsHeaders,
-      body: JSON.stringify({
-        error: 'Erro ao processar lançamentos mensais',
-        detalhe: error.message || 'Erro desconhecido',
-        tipo: error.name || 'Error',
-        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-      })
-    };
+    console.error('❌ Erro no processamento:', error.message);
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: corsHeaders
+    });
   }
 };
-
