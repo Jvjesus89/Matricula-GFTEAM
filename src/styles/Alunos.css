@@ -1,2 +1,38 @@
-/* Estilos específicos do Alunos já estão no stylepadrao.css */
+
+.container-Cadastro {
+	padding: 0;
+	margin: auto; /* Centraliza horizontalmente */
+	margin-top: 20px;
+	margin-bottom: 20px;
+	border-radius: 0;
+	border: none;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	padding: 16px 0;
+}
+
+.form-cadastro-duas-colunas .form-grupo-duas-colunas {
+	width: 100%;
+}
+
+.duas-colunas {
+	display: flex;
+	gap: 24px;
+	width: 100%;
+}
+
+.duas-colunas .coluna {
+	flex: 1 1 0;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+@media (max-width: 700px) {
+	.duas-colunas {
+		flex-direction: column;
+		gap: 8px;
+	}
+}
 

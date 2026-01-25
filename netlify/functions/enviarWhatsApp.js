@@ -1,5 +1,5 @@
-const axios = require('axios');
-const { createClient } = require('@supabase/supabase-js');
+import axios from 'axios';
+import { createClient } from '@supabase/supabase-js';
 
 // Configuração do Supabase
 const supabaseUrl = process.env.SUPABASE_URL;
@@ -23,7 +23,7 @@ const corsHeaders = {
   'Content-Type': 'application/json'
 };
 
-exports.handler = async function(event, context) {
+const handler = async (event, context) => {
   console.log('📥 Iniciando processamento da requisição');
   console.log('📦 Corpo da requisição:', event.body);
   
@@ -35,7 +35,8 @@ exports.handler = async function(event, context) {
       headers: corsHeaders,
       body: ''
     };
-  }
+  };
+  export default handler;
 
   // Verifica se o método é POST
   if (event.httpMethod !== 'POST') {

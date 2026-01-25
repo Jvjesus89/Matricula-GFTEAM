@@ -29,6 +29,13 @@ export const handler = async (event, context) => {
         telefone,
         idperfilusuario,
         idresponsavel,
+        faixa,
+        datanascimento,
+        endereco,
+        documento,
+        email,
+        nomesresponsaveis,
+        usamedicamento,
         usuario_perfil (
           idperfilusuario,
           perfil,

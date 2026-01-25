@@ -1,23 +1,37 @@
-const { createClient } = require('@supabase/supabase-js');
+import { createClient } from '@supabase/supabase-js';
 
+// Inicialização do Supabase
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_ANON_KEY;
-
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-exports.handler = async function(event, context) {
-  if (event.httpMethod !== 'GET') {
-    return {
-      statusCode: 405,
-      body: JSON.stringify({ error: 'Método não permitido' }),
-    };
+// No padrão v2, exportamos uma função padrão (default)
+export default async (request, context) => {
+  
+  // 1. Verificação de Método (Headers de CORS incluídos para evitar bloqueios)
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Content-Type': 'application/json'
+  };
+
+  if (request.method === 'OPTIONS') {
+    return new Response(null, { status: 204, headers });
+  }
+
+  if (request.method !== 'GET') {
+    return new Response(JSON.stringify({ error: 'Método não permitido' }), {
+      status: 405,
+      headers
+    });
   }
 
   try {
-    // Obtém o ID do usuário da query string, se existir
-    const params = new URLSearchParams(event.rawQuery);
-    const idusuario = params.get('idusuario');
+    // 2. Leitura de Parâmetros da URL (Novo padrão ESM)
+    const url = new URL(request.url);
+    const idusuario = url.searchParams.get('idusuario');
 
+    // 3. Construção da Query
     let query = supabase
       .from('financeiro')
       .select(`
@@ -35,7 +49,6 @@ exports.handler = async function(event, context) {
       `)
       .order('data_vencimento', { ascending: true });
 
-    // Se foi especificado um usuário, filtra por ele
     if (idusuario) {
       query = query.eq('idusuario', idusuario);
     }
@@ -43,13 +56,13 @@ exports.handler = async function(event, context) {
     const { data, error } = await query;
 
     if (error) {
-      return {
-        statusCode: 500,
-        body: JSON.stringify({ error: error.message }),
-      };
+      return new Response(JSON.stringify({ error: error.message }), {
+        status: 500,
+        headers
+      });
     }
 
-    // Formata os dados para incluir o nome do usuário diretamente no objeto principal
+    // 4. Formatação dos dados
     const formattedData = data.map(item => ({
       ...item,
       nome: item.usuarios?.nome || 'Usuário não encontrado',
@@ -57,18 +70,16 @@ exports.handler = async function(event, context) {
       telefone: item.usuarios?.telefone || null
     }));
 
-    return {
-      statusCode: 200,
-      body: JSON.stringify(formattedData),
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Content-Type': 'application/json'
-      }
-    };
+    // 5. Retorno usando o objeto Response (Padrão v2)
+    return new Response(JSON.stringify(formattedData), {
+      status: 200,
+      headers
+    });
+
   } catch (err) {
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: 'Erro no servidor: ' + err.message }),
-    };
+    return new Response(JSON.stringify({ error: 'Erro no servidor: ' + err.message }), {
+      status: 500,
+      headers
+    });
   }
-}; 
+};

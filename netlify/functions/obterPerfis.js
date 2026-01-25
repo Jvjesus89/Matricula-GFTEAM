@@ -1,41 +1,35 @@
-const { createClient } = require('@supabase/supabase-js')
+import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.SUPABASE_URL
-const supabaseKey = process.env.SUPABASE_ANON_KEY
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
-const supabase = createClient(supabaseUrl, supabaseKey)
-
-exports.handler = async function (event, context) {
+export default async (request, context) => {
   try {
-    const { data, error } = await supabase.from('usuario_perfil').select('*').order('perfil')
-
+    const { data, error } = await supabase.from('usuario_perfil').select('*').order('perfil');
     if (error) {
-      return {
-        statusCode: 500,
+      return new Response(JSON.stringify({ error: error.message }), {
+        status: 500,
         headers: {
           'Access-Control-Allow-Origin': '*',
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ error: error.message }),
-      }
+      });
     }
-
-    return {
-      statusCode: 200,
+    return new Response(JSON.stringify(data), {
+      status: 200,
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(data),
-    }
+    });
   } catch (err) {
-    return {
-      statusCode: 500,
+    return new Response(JSON.stringify({ error: 'Erro ao buscar perfis: ' + err.message }), {
+      status: 500,
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ error: 'Erro ao buscar perfis: ' + err.message }),
-    }
+    });
   }
-}
+};

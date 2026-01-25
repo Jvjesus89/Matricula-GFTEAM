@@ -1,11 +1,10 @@
-const { createClient } = require('@supabase/supabase-js')
+import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.SUPABASE_URL
-const supabaseKey = process.env.SUPABASE_ANON_KEY
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
-const supabase = createClient(supabaseUrl, supabaseKey)
-
-exports.handler = async function (event, context) {
+const handler = async (event, context) => {
   // Handle preflight
   if (event.httpMethod === 'OPTIONS') {
     return {
@@ -109,6 +108,7 @@ exports.handler = async function (event, context) {
       body: JSON.stringify({ error: 'Erro no servidor: ' + err.message }),
     }
   }
-}
+};
+export default handler;
 
 
